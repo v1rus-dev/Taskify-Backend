@@ -14,6 +14,7 @@ class TaskRead(BaseModel):
     description: Optional[str] = None
     is_completed: bool
     user_id: UUID
+    is_favorite: bool
     created_at: datetime
     updated_at: datetime
 

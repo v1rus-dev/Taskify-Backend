@@ -4,6 +4,7 @@ from app.database import get_db
 from app.models.task import Task
 from app.models.user import User
 from app.schemas import TaskCreate, TaskRead
+from app.utils.tasks import enrich_tasks_with_favorite
 from typing import List
 from uuid import UUID
 
@@ -24,7 +25,10 @@ def create_task(user_id: UUID, task: TaskCreate, db: Session = Depends(get_db)):
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
-    return new_task
+    
+    # Обогащаем задачу информацией об избранном
+    enriched = enrich_tasks_with_favorite([new_task], user_id, db)
+    return enriched[0]
 
 @router.get("/", response_model=List[TaskRead])
 def get_tasks(user_id: UUID, db: Session = Depends(get_db)):
@@ -34,7 +38,7 @@ def get_tasks(user_id: UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     
     tasks = db.query(Task).filter(Task.user_id == user_id).all()
-    return tasks
+    return enrich_tasks_with_favorite(tasks, user_id, db)
 
 @router.patch("/{task_id}", response_model=TaskRead)
 def update_task(task_id: int, user_id: UUID, task: TaskCreate, db: Session = Depends(get_db)):
@@ -44,7 +48,6 @@ def update_task(task_id: int, user_id: UUID, task: TaskCreate, db: Session = Dep
         raise HTTPException(status_code=404, detail="User not found")
     
     existing_task = db.query(Task).filter(Task.id == task_id, Task.user_id == user_id).first()
-    print(existing_task)
     if not existing_task:
         raise HTTPException(status_code=404, detail="Task not found")
     
@@ -54,7 +57,10 @@ def update_task(task_id: int, user_id: UUID, task: TaskCreate, db: Session = Dep
         existing_task.is_completed = task.is_completed
     db.commit()
     db.refresh(existing_task)
-    return existing_task
+    
+    # Обогащаем задачу информацией об избранном
+    enriched = enrich_tasks_with_favorite([existing_task], user_id, db)
+    return enriched[0]
 
 @router.delete("/{task_id}")
 def delete_task(task_id: int, user_id: UUID, db: Session = Depends(get_db)):
