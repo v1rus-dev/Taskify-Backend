@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from app.database import engine
 from app.models import Base
-from app.routers import routers
+from app.routing import routers
 
 app = FastAPI(title="Tasky - Mini Todo API")
 
