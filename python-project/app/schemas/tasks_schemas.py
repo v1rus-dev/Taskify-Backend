@@ -6,6 +6,7 @@ from uuid import UUID
 class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = None
+    is_completed: Optional[bool] = None
 
 class TaskRead(BaseModel):
     id: int

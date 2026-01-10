@@ -35,3 +35,37 @@ def get_tasks(user_id: UUID, db: Session = Depends(get_db)):
     
     tasks = db.query(Task).filter(Task.user_id == user_id).all()
     return tasks
+
+@router.patch("/{task_id}", response_model=TaskRead)
+def update_task(task_id: int, user_id: UUID, task: TaskCreate, db: Session = Depends(get_db)):
+    # Проверяем существование пользователя
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    existing_task = db.query(Task).filter(Task.id == task_id, Task.user_id == user_id).first()
+    print(existing_task)
+    if not existing_task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    existing_task.title = task.title
+    existing_task.description = task.description
+    if task.is_completed is not None:
+        existing_task.is_completed = task.is_completed
+    db.commit()
+    db.refresh(existing_task)
+    return existing_task
+
+@router.delete("/{task_id}")
+def delete_task(task_id: int, user_id: UUID, db: Session = Depends(get_db)):
+    # Проверяем существование пользователя
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    existing_task = db.query(Task).filter(Task.id == task_id, Task.user_id == user_id).first()
+    if not existing_task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    db.delete(existing_task)
+    db.commit()
+    return {"message": "Task deleted successfully"}
