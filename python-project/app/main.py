@@ -1,7 +1,6 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
+from fastapi import FastAPI
 from app.database import engine
-from app.models import Base, Task
+from app.models import Base
 from app.routers import routers
 
 app = FastAPI(title="Tasky - Mini Todo API")
