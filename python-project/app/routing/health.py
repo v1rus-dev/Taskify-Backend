@@ -4,4 +4,4 @@ router = APIRouter(prefix="/health", tags=["Health"])
 
 @router.get("")
 async def health_check():
-    return {"status": "ok", "service": "Tasky Backend"}
+    return {"status": "ok", "service": "Taskify Backend"}
