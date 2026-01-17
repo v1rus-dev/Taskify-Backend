@@ -24,3 +24,6 @@ Thumbs.db
 # Database
 postgres_data/
 pgadmin_data/
+
+# Codex
+.codex/config.toml
