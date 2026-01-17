@@ -20,14 +20,14 @@ class TaskService:
         self.user_repository.ensure_user_exists(user_id)
         
         task = self.task_repository.create(title, description, user_id)
-        return task
+        return TaskRead.model_validate(task)
 
     def get_tasks(self, user_id: UUID) -> List[TaskRead]:
         """Получает все задачи пользователя."""
         self.user_repository.ensure_user_exists(user_id)
         
         tasks = self.task_repository.get_by_user_id(user_id)
-        return tasks
+        return [TaskRead.model_validate(task) for task in tasks]
 
     def update_task(self, task_id: int, user_id: UUID, title: str, description: Optional[str], is_completed: Optional[bool]) -> TaskRead:
         """Обновляет задачу."""
@@ -38,7 +38,7 @@ class TaskService:
             raise HTTPException(status_code=404, detail="Task not found")
         
         updated_task = self.task_repository.update(task, title, description, is_completed)
-        return updated_task
+        return TaskRead.model_validate(updated_task)
 
     def delete_task(self, task_id: int, user_id: UUID) -> dict:
         """Удаляет задачу."""

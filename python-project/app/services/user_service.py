@@ -8,16 +8,6 @@ class UserService:
     def __init__(self, repository: UserRepository):
         self.repository = repository
 
-    def create_anonymous_user(self) -> UserRead:
-        """Создаёт нового анонимного пользователя."""
-        user = self.repository.create_anonymous_user()
-        return UserRead(
-            id=user.id,
-            is_anonymous=user.is_anonymous,
-            created_at=user.created_at,
-            updated_at=user.updated_at
-        )
-
     def get_user(self, user_id: UUID) -> UserRead:
         """Получает пользователя по ID."""
         user = self.repository.get_by_id(user_id)
@@ -25,7 +15,11 @@ class UserService:
             raise HTTPException(status_code=404, detail="User not found")
         return UserRead(
             id=user.id,
-            is_anonymous=user.is_anonymous,
+            provider=user.provider,
+            provider_user_id=user.provider_user_id,
+            email=user.email,
+            name=user.name,
+            avatar_url=user.avatar_url,
             created_at=user.created_at,
             updated_at=user.updated_at
         )

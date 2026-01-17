@@ -1,42 +1,40 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from app.database import get_db
-from app.depends import get_task_service
+from app.depends import get_task_service, get_current_user
 from app.services.task_service import TaskService
 from app.schemas import TaskCreate, TaskRead
 from typing import List
-from uuid import UUID
+from app.models.user import User
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 @router.post("/create", response_model=TaskRead)
 def create_task(
-    user_id: UUID,
     task: TaskCreate,
+    current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(get_task_service)
 ):
-    return task_service.create_task(user_id, task.title, task.description)
+    return task_service.create_task(current_user.id, task.title, task.description)
 
 @router.get("/", response_model=List[TaskRead])
 def get_tasks(
-    user_id: UUID,
+    current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(get_task_service)
 ):
-    return task_service.get_tasks(user_id)
+    return task_service.get_tasks(current_user.id)
 
 @router.patch("/{task_id}", response_model=TaskRead)
 def update_task(
     task_id: int,
-    user_id: UUID,
     task: TaskCreate,
+    current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(get_task_service)
 ):
-    return task_service.update_task(task_id, user_id, task.title, task.description, task.is_completed)
+    return task_service.update_task(task_id, current_user.id, task.title, task.description, task.is_completed)
 
 @router.delete("/{task_id}")
 def delete_task(
     task_id: int,
-    user_id: UUID,
+    current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(get_task_service)
 ):
-    return task_service.delete_task(task_id, user_id)
+    return task_service.delete_task(task_id, current_user.id)
