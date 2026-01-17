@@ -7,10 +7,12 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.repositories.user_repository import UserRepository
 from app.repositories.task_repository import TaskRepository
+from app.repositories.subtask_repository import SubTaskRepository
 from app.services.user_service import UserService
 from app.services.task_service import TaskService
 from app.services.favorite_service import FavoriteService
 from app.services.auth_service import AuthService
+from app.services.subtask_service import SubTaskService
 from app.core.security import decode_access_token
 from uuid import UUID
 
@@ -23,6 +25,11 @@ def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
 def get_task_repository(db: Session = Depends(get_db)) -> TaskRepository:
     """Создаёт репозиторий задач."""
     return TaskRepository(db)
+
+
+def get_subtask_repository(db: Session = Depends(get_db)) -> SubTaskRepository:
+    """Создаёт репозиторий подзадач."""
+    return SubTaskRepository(db)
 
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
@@ -48,6 +55,13 @@ def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
     """Создаёт сервис аутентификации."""
     user_repository = UserRepository(db)
     return AuthService(user_repository)
+
+
+def get_subtask_service(db: Session = Depends(get_db)) -> SubTaskService:
+    """Создаёт сервис подзадач."""
+    subtask_repository = SubTaskRepository(db)
+    task_repository = TaskRepository(db)
+    return SubTaskService(subtask_repository, task_repository)
 
 
 auth_scheme = HTTPBearer()

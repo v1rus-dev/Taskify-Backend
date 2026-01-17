@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from app.depends import get_auth_service, get_current_user
-from app.schemas import AuthRequest, AuthResponse, PasswordLinkRequest, PasswordLoginRequest
+from app.schemas import AuthRequest, AuthResponse, PasswordLinkRequest, PasswordLoginRequest, RefreshTokenRequest, RefreshTokenResponse
 from app.services.auth_service import AuthService
 from app.models.user import User
 
@@ -30,3 +30,12 @@ def login_password(
     auth_service: AuthService = Depends(get_auth_service)
 ):
     return auth_service.login_with_password(payload.email, payload.password)
+
+
+@router.post("/refresh", response_model=RefreshTokenResponse)
+def refresh_token(
+    payload: RefreshTokenRequest,
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """Обновляет access токен используя refresh токен."""
+    return auth_service.refresh_token(payload.refresh_token)

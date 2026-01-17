@@ -6,8 +6,8 @@ from jwt import PyJWKClient
 from fastapi import HTTPException, status
 
 from app.repositories.user_repository import UserRepository
-from app.schemas import AuthResponse, UserRead
-from app.core.security import create_access_token, hash_password, verify_password
+from app.schemas import AuthResponse, UserRead, RefreshTokenResponse
+from app.core.security import create_access_token, create_refresh_token, hash_password, verify_password
 from app.models.user import User
 
 
@@ -40,7 +40,47 @@ class AuthService:
             user = self.user_repository.update_profile(user, email, None, None)
 
         access_token = create_access_token(str(user.id))
-        return AuthResponse(access_token=access_token, user=UserRead.model_validate(user))
+        refresh_token = create_refresh_token(str(user.id))
+        return AuthResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            user=UserRead.model_validate(user)
+        )
+
+    def refresh_token(self, refresh_token: str) -> RefreshTokenResponse:
+        """Создаёт новый access токен используя refresh токен."""
+        from app.core.security import decode_refresh_token
+        
+        try:
+            payload = decode_refresh_token(refresh_token)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid refresh token: {str(exc)}"
+            ) from exc
+        
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token missing subject (sub) claim"
+            )
+        
+        user = self.user_repository.get_by_id(user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+        
+        # Создаём новую пару токенов
+        new_access_token = create_access_token(str(user.id))
+        new_refresh_token = create_refresh_token(str(user.id))
+        
+        return RefreshTokenResponse(
+            access_token=new_access_token,
+            refresh_token=new_refresh_token
+        )
 
     def link_password(self, user: User, email: str, password: str) -> AuthResponse:
         normalized_email = email.strip().lower()
@@ -51,7 +91,12 @@ class AuthService:
         password_hash = hash_password(password)
         user = self.user_repository.set_email_and_password(user, normalized_email, password_hash)
         access_token = create_access_token(str(user.id))
-        return AuthResponse(access_token=access_token, user=UserRead.model_validate(user))
+        refresh_token = create_refresh_token(str(user.id))
+        return AuthResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            user=UserRead.model_validate(user)
+        )
 
     def login_with_password(self, email: str, password: str) -> AuthResponse:
         normalized_email = email.strip().lower()
@@ -62,7 +107,12 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
         access_token = create_access_token(str(user.id))
-        return AuthResponse(access_token=access_token, user=UserRead.model_validate(user))
+        refresh_token = create_refresh_token(str(user.id))
+        return AuthResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            user=UserRead.model_validate(user)
+        )
 
     def _verify_id_token(self, id_token: str) -> Dict[str, Any]:
         jwks_url, issuer, audience = self._firebase_config()
