@@ -8,9 +8,10 @@ from fastapi import APIRouter, Query, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from app.database import get_db, engine
 from app.models import Base, User, Task
+from app.depends import require_admin
 
 
-router = APIRouter(prefix="/admin", tags=["Admin"])
+router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(require_admin)])
 
 
 def _read_log(log_file: str, tail: int) -> str:

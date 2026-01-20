@@ -1,8 +1,16 @@
 """
 Файл внедрения зависимостей
 """
+import os
+import secrets
+
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import (
+    HTTPAuthorizationCredentials,
+    HTTPBearer,
+    HTTPBasic,
+    HTTPBasicCredentials,
+)
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.repositories.user_repository import UserRepository
@@ -65,6 +73,8 @@ def get_subtask_service(db: Session = Depends(get_db)) -> SubTaskService:
 
 
 auth_scheme = HTTPBearer()
+admin_bearer_scheme = HTTPBearer(auto_error=False)
+admin_basic_scheme = HTTPBasic(auto_error=False)
 
 
 def get_current_user(
@@ -108,3 +118,44 @@ def get_current_user(
             detail=f"User not found: {user_id}"
         )
     return user
+
+
+def require_admin(
+    bearer_credentials: HTTPAuthorizationCredentials = Depends(admin_bearer_scheme),
+    basic_credentials: HTTPBasicCredentials = Depends(admin_basic_scheme),
+) -> None:
+    if os.getenv("ENABLE_ADMIN", "false").lower() != "true":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access is disabled"
+        )
+
+    admin_token = os.getenv("ADMIN_TOKEN")
+    if admin_token and bearer_credentials and bearer_credentials.credentials:
+        if bearer_credentials.credentials == admin_token:
+            return
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid admin token"
+        )
+
+    basic_user = os.getenv("ADMIN_BASIC_USER")
+    basic_password = os.getenv("ADMIN_BASIC_PASSWORD")
+    if basic_user and basic_password and basic_credentials:
+        is_user_match = secrets.compare_digest(basic_credentials.username, basic_user)
+        is_pass_match = secrets.compare_digest(basic_credentials.password, basic_password)
+        if is_user_match and is_pass_match:
+            return
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid admin credentials"
+        )
+
+    headers = None
+    if os.getenv("ADMIN_BASIC_USER") and os.getenv("ADMIN_BASIC_PASSWORD"):
+        headers = {"WWW-Authenticate": "Basic"}
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authorization header missing or invalid",
+        headers=headers,
+    )

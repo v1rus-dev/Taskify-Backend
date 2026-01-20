@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Копируем код приложения
 COPY python-project/app ./app
+COPY python-project/admin_app ./admin_app
 
 # Экспонируем порт FastAPI
 EXPOSE 8000
