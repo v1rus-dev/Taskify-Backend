@@ -29,7 +29,7 @@ class TaskService:
         tasks = self.task_repository.get_by_user_id(user_id)
         return [TaskRead.model_validate(task) for task in tasks]
 
-    def update_task(self, task_id: int, user_id: UUID, title: str, description: Optional[str], is_completed: Optional[bool]) -> TaskRead:
+    def update_task(self, task_id: int, user_id: UUID, title: Optional[str], description: Optional[str], is_completed: Optional[bool]) -> TaskRead:
         """Обновляет задачу."""
         self.user_repository.ensure_user_exists(user_id)
         
