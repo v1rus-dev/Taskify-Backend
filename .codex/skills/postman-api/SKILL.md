@@ -1,6 +1,6 @@
 ---
 name: postman-api
-description: Postman MCP workflow for FastAPI development and testing: find/get collections, run collections, create/update requests, manage mocks, and generate Python client code. Use when the user asks to test API endpoints, create/update Postman requests or mocks, or generate a Python client for an API.
+description: Postman MCP workflow for FastAPI development and testing, find/get collections, run collections, create/update requests, manage mocks, and generate Python client code. Use when the user asks to test API endpoints, create/update Postman requests or mocks, or generate a Python client for an API.
 ---
 
 # Postman API

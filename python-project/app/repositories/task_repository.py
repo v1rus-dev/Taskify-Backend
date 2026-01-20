@@ -31,10 +31,12 @@ class TaskRepository:
             Task.user_id == user_id
         ).first()
 
-    def update(self, task: Task, title: str, description: Optional[str], is_completed: Optional[bool]) -> Task:
+    def update(self, task: Task, title: Optional[str], description: Optional[str], is_completed: Optional[bool]) -> Task:
         """Обновляет задачу."""
-        task.title = title
-        task.description = description
+        if title is not None:
+            task.title = title
+        if description is not None:
+            task.description = description
         if is_completed is not None:
             task.is_completed = is_completed
         self.db.commit()

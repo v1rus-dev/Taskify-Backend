@@ -18,7 +18,6 @@ from app.repositories.task_repository import TaskRepository
 from app.repositories.subtask_repository import SubTaskRepository
 from app.services.user_service import UserService
 from app.services.task_service import TaskService
-from app.services.favorite_service import FavoriteService
 from app.services.auth_service import AuthService
 from app.services.subtask_service import SubTaskService
 from app.core.security import decode_access_token
@@ -53,10 +52,6 @@ def get_task_service(db: Session = Depends(get_db)) -> TaskService:
     return TaskService(task_repository, user_repository)
 
 
-def get_favorite_service(db: Session = Depends(get_db)) -> FavoriteService:
-    """Создаёт сервис избранных задач."""
-    user_repository = UserRepository(db)
-    return FavoriteService(user_repository)
 
 
 def get_auth_service(db: Session = Depends(get_db)) -> AuthService:

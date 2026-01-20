@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from app.depends import get_task_service, get_current_user
 from app.services.task_service import TaskService
-from app.schemas import TaskCreate, TaskRead
+from app.schemas import TaskCreate, TaskUpdate, TaskRead
 from typing import List
 from app.models.user import User
 
@@ -25,7 +25,7 @@ def get_tasks(
 @router.patch("/{task_id}", response_model=TaskRead)
 def update_task(
     task_id: int,
-    task: TaskCreate,
+    task: TaskUpdate,
     current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(get_task_service)
 ):

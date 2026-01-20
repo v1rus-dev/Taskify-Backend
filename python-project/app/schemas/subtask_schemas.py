@@ -1,10 +1,10 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from datetime import datetime
 
 
 class SubTaskCreate(BaseModel):
-    text: str
+    text: str = Field(..., min_length=1, max_length=2000)
     is_completed: Optional[bool] = False
 
 
@@ -14,7 +14,7 @@ class SubTaskCreateList(BaseModel):
 
 class SubTaskUpdateItem(BaseModel):
     id: int
-    text: Optional[str] = None
+    text: Optional[str] = Field(default=None, min_length=1, max_length=2000)
     is_completed: Optional[bool] = None
 
 
@@ -23,7 +23,7 @@ class SubTaskUpdateList(BaseModel):
 
 
 class SubTaskUpdate(BaseModel):
-    text: Optional[str] = None
+    text: Optional[str] = Field(default=None, min_length=1, max_length=2000)
     is_completed: Optional[bool] = None
 
 

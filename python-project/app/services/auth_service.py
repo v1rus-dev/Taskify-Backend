@@ -16,7 +16,6 @@ class AuthService:
         self.user_repository = user_repository
 
     def authenticate_with_provider(self, provider: str, id_token: str) -> AuthResponse:
-        print(f"Authenticating with provider: {provider} and id_token: {id_token}")
         claims = self._verify_id_token(id_token)
         provider_user_id = claims.get("sub")
         if not provider_user_id:
