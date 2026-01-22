@@ -16,10 +16,12 @@ from app.database import get_db
 from app.repositories.user_repository import UserRepository
 from app.repositories.task_repository import TaskRepository
 from app.repositories.subtask_repository import SubTaskRepository
+from app.repositories.tag_repository import TagRepository
 from app.services.user_service import UserService
 from app.services.task_service import TaskService
 from app.services.auth_service import AuthService
 from app.services.subtask_service import SubTaskService
+from app.services.tag_service import TagService
 from app.services.cache_service import CacheService
 from app.core.redis import get_redis_client
 from app.core.security import decode_access_token
@@ -40,6 +42,10 @@ def get_subtask_repository(db: Session = Depends(get_db)) -> SubTaskRepository:
     """Создаёт репозиторий подзадач."""
     return SubTaskRepository(db)
 
+def get_tag_repository(db: Session = Depends(get_db)) -> TagRepository:
+    """Создаёт репозиторий тегов."""
+    return TagRepository(db)
+
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
     """Создаёт сервис пользователей."""
@@ -51,8 +57,9 @@ def get_task_service(db: Session = Depends(get_db)) -> TaskService:
     """Создаёт сервис задач."""
     task_repository = TaskRepository(db)
     user_repository = UserRepository(db)
+    tag_repository = TagRepository(db)
     cache_service = CacheService(get_redis_client())
-    return TaskService(task_repository, user_repository, cache_service)
+    return TaskService(task_repository, user_repository, tag_repository, cache_service)
 
 
 
@@ -69,6 +76,11 @@ def get_subtask_service(db: Session = Depends(get_db)) -> SubTaskService:
     task_repository = TaskRepository(db)
     cache_service = CacheService(get_redis_client())
     return SubTaskService(subtask_repository, task_repository, cache_service)
+
+def get_tag_service(db: Session = Depends(get_db)) -> TagService:
+    """Создаёт сервис тегов."""
+    tag_repository = TagRepository(db)
+    return TagService(tag_repository)
 
 
 auth_scheme = HTTPBearer()

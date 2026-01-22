@@ -18,6 +18,8 @@ class User(Base):
     name = Column(String(255), nullable=True)
     avatar_url = Column(String(512), nullable=True)
     password_hash = Column(String(255), nullable=True)
+    user_tag = Column(String(64), nullable=True, unique=True, index=True)
     tasks = relationship("Task", back_populates="user")
+    tags = relationship("Tag", back_populates="user", cascade="all, delete-orphan")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now(), nullable=False)

@@ -13,7 +13,7 @@ def create_task(
     current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(get_task_service)
 ):
-    return task_service.create_task(current_user.id, task.title, task.description)
+    return task_service.create_task(current_user.id, task.title, task.description, task.tags)
 
 @router.get("/", response_model=List[TaskRead])
 def get_tasks(
@@ -29,7 +29,14 @@ def update_task(
     current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(get_task_service)
 ):
-    return task_service.update_task(task_id, current_user.id, task.title, task.description, task.is_completed)
+    return task_service.update_task(
+        task_id,
+        current_user.id,
+        task.title,
+        task.description,
+        task.is_completed,
+        task.tags,
+    )
 
 @router.delete("/{task_id}")
 def delete_task(
