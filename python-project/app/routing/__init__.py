@@ -4,5 +4,6 @@ from .users import router as users_router
 from .auth import router as auth_router
 from .subtasks import router as subtasks_router
 from .tags import router as tags_router
+from .friends import router as friends_router
 
-routers = [health_router, tasks_router, users_router, auth_router, subtasks_router, tags_router]
+routers = [health_router, tasks_router, users_router, auth_router, subtasks_router, tags_router, friends_router]

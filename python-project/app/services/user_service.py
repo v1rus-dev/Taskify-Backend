@@ -20,6 +20,7 @@ class UserService:
             email=user.email,
             name=user.name,
             avatar_url=user.avatar_url,
+            friend_tag=user.friend_tag,
             created_at=user.created_at,
             updated_at=user.updated_at
         )

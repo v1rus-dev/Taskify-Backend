@@ -17,11 +17,13 @@ from app.repositories.user_repository import UserRepository
 from app.repositories.task_repository import TaskRepository
 from app.repositories.subtask_repository import SubTaskRepository
 from app.repositories.tag_repository import TagRepository
+from app.repositories.friend_repository import FriendRepository
 from app.services.user_service import UserService
 from app.services.task_service import TaskService
 from app.services.auth_service import AuthService
 from app.services.subtask_service import SubTaskService
 from app.services.tag_service import TagService
+from app.services.friend_service import FriendService
 from app.services.cache_service import CacheService
 from app.core.redis import get_redis_client
 from app.core.security import decode_access_token
@@ -81,6 +83,11 @@ def get_tag_service(db: Session = Depends(get_db)) -> TagService:
     """Создаёт сервис тегов."""
     tag_repository = TagRepository(db)
     return TagService(tag_repository)
+
+def get_friend_service(db: Session = Depends(get_db)) -> FriendService:
+    """Создаёт сервис друзей."""
+    friend_repository = FriendRepository(db)
+    return FriendService(friend_repository)
 
 
 auth_scheme = HTTPBearer()
