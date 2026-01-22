@@ -12,6 +12,6 @@ class UserRead(BaseModel):
     email: Optional[str]
     name: Optional[str]
     avatar_url: Optional[str]
-    friend_tag: Optional[str]
+    friend_tag: str
     created_at: datetime
     updated_at: datetime

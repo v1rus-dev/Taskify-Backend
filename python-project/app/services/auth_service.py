@@ -26,7 +26,6 @@ class AuthService:
 
         user = self.user_repository.get_by_provider(sign_in_provider, provider_user_id)
         if not user:
-            # Новый пользователь - создаем с пустыми name и avatar_url
             user = self.user_repository.create_oauth_user(
                 provider=sign_in_provider,
                 provider_user_id=provider_user_id,
@@ -35,8 +34,8 @@ class AuthService:
                 avatar_url=None
             )
         else:
-            # Существующий пользователь - обновляем только email, name и avatar_url берем из БД
             user = self.user_repository.update_profile(user, email, None, None)
+        user = self.user_repository.ensure_friend_tag(user)
 
         access_token = create_access_token(str(user.id))
         refresh_token = create_refresh_token(str(user.id))
@@ -89,6 +88,7 @@ class AuthService:
 
         password_hash = hash_password(password)
         user = self.user_repository.set_email_and_password(user, normalized_email, password_hash)
+        user = self.user_repository.ensure_friend_tag(user)
         access_token = create_access_token(str(user.id))
         refresh_token = create_refresh_token(str(user.id))
         return AuthResponse(
@@ -105,6 +105,7 @@ class AuthService:
         if not verify_password(password, user.password_hash):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
+        user = self.user_repository.ensure_friend_tag(user)
         access_token = create_access_token(str(user.id))
         refresh_token = create_refresh_token(str(user.id))
         return AuthResponse(

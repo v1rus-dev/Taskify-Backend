@@ -19,7 +19,7 @@ class User(Base):
     name = Column(String(255), nullable=True)
     avatar_url = Column(String(512), nullable=True)
     password_hash = Column(String(255), nullable=True)
-    friend_tag = Column(String(64), nullable=True, unique=True, index=True)
+    friend_tag = Column(String(64), nullable=False, unique=True, index=True)
     tasks = relationship("Task", back_populates="user")
     tags = relationship("Tag", back_populates="user", cascade="all, delete-orphan")
     friends = relationship(

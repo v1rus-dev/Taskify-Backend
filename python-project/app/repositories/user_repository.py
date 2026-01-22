@@ -1,5 +1,6 @@
 from typing import Optional
-from fastapi import HTTPException
+import secrets
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.user import User
 from uuid import UUID
@@ -8,6 +9,7 @@ from uuid import UUID
 class UserRepository:
     def __init__(self, db: Session):
         self.db = db
+        self._friend_tag_alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
     def get_by_id(self, user_id: UUID) -> Optional[User]:
         """Получает пользователя по ID."""
@@ -39,7 +41,8 @@ class UserRepository:
             provider_user_id=provider_user_id,
             email=email,
             name=name,
-            avatar_url=avatar_url
+            avatar_url=avatar_url,
+            friend_tag=self._generate_unique_friend_tag()
         )
         self.db.add(new_user)
         self.db.commit()
@@ -76,6 +79,35 @@ class UserRepository:
         self.db.commit()
         self.db.refresh(user)
         return user
+
+    def ensure_friend_tag(self, user: User) -> User:
+        """Гарантирует наличие friend_tag у пользователя."""
+        if user.friend_tag:
+            return user
+        user.friend_tag = self._generate_unique_friend_tag()
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def _generate_friend_tag(self) -> str:
+        part_a = "".join(secrets.choice(self._friend_tag_alphabet) for _ in range(4))
+        part_b = "".join(secrets.choice(self._friend_tag_alphabet) for _ in range(4))
+        return f"{part_a}-{part_b}"
+
+    def _generate_unique_friend_tag(self) -> str:
+        for _ in range(50):
+            candidate = self._generate_friend_tag()
+            exists = (
+                self.db.query(User.id)
+                .filter(User.friend_tag == candidate)
+                .first()
+            )
+            if not exists:
+                return candidate
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to generate unique friend tag"
+        )
 
     def ensure_user_exists(self, user_id: UUID) -> None:
         """Проверяет существование пользователя. Выбрасывает HTTPException, если пользователь не найден."""

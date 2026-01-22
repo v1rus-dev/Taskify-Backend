@@ -22,7 +22,7 @@ class FriendAction(BaseModel):
 
 class FriendRead(BaseModel):
     id: UUID
-    friend_tag: str | None
+    friend_tag: str
 
 
 class FriendsList(BaseModel):
