@@ -43,8 +43,37 @@ services:
     depends_on:
       - db
     volumes:
-      - pgadmin_data:/var/lib/pgadmin  # пробел после дефиса важен
+      - pgadmin_data:/var/lib/pgadmin
+
+  redis:
+    image: redis:latest
+    container_name: redis_container
+    command:
+      - "sh"
+      - "-c"
+      - "printf 'user default off\\nuser %s on >%s ~* +@read +@write +@connection +@fast -@dangerous -@admin -@slow\\n' \"$REDIS_USER\" \"$REDIS_USER_PASSWORD\" > /data/users.acl && exec redis-server --aclfile /data/users.acl"
+    environment:
+      - REDIS_USER=${REDIS_USER}
+      - REDIS_USER_PASSWORD=${REDIS_USER_PASSWORD}
+    ports:
+      - "6380:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -u redis://${REDIS_USER}:${REDIS_USER_PASSWORD}@localhost:6379 ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
 volumes:
   postgres_data:
-  pgadmin_data:   # <-- добавляем сюда, иначе Docker создаст временный volume
+  pgadmin_data:
+  redisdata:

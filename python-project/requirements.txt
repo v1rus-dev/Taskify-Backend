@@ -8,3 +8,5 @@ pydantic[email]
 PyJWT[crypto]
 passlib[bcrypt]
 alembic
+redis
+sentry-sdk[fastapi]

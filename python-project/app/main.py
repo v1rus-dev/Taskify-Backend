@@ -2,6 +2,9 @@ import logging
 import os
 import time
 
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -30,9 +33,33 @@ def configure_logging() -> None:
         if not any(isinstance(h, logging.FileHandler) for h in uvicorn_logger.handlers):
             uvicorn_logger.addHandler(file_handler)
 
+
+def configure_sentry() -> None:
+    dsn = os.getenv("SENTRY_DSN")
+    if not dsn:
+        return
+
+    environment = os.getenv("SENTRY_ENVIRONMENT", "development")
+    traces_sample_rate = float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.0"))
+    profiles_sample_rate = float(os.getenv("SENTRY_PROFILES_SAMPLE_RATE", "0.0"))
+
+    sentry_logging = LoggingIntegration(
+        level=logging.ERROR,
+        event_level=logging.ERROR,
+    )
+
+    sentry_sdk.init(
+        dsn=dsn,
+        environment=environment,
+        traces_sample_rate=traces_sample_rate,
+        profiles_sample_rate=profiles_sample_rate,
+        integrations=[FastApiIntegration(), sentry_logging],
+    )
+
 app = FastAPI(title="Taskify - Mini Todo API")
 
 configure_logging()
+configure_sentry()
 logger = logging.getLogger("app")
 
 

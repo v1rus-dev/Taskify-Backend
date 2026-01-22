@@ -20,6 +20,8 @@ from app.services.user_service import UserService
 from app.services.task_service import TaskService
 from app.services.auth_service import AuthService
 from app.services.subtask_service import SubTaskService
+from app.services.cache_service import CacheService
+from app.core.redis import get_redis_client
 from app.core.security import decode_access_token
 from uuid import UUID
 
@@ -49,7 +51,8 @@ def get_task_service(db: Session = Depends(get_db)) -> TaskService:
     """Создаёт сервис задач."""
     task_repository = TaskRepository(db)
     user_repository = UserRepository(db)
-    return TaskService(task_repository, user_repository)
+    cache_service = CacheService(get_redis_client())
+    return TaskService(task_repository, user_repository, cache_service)
 
 
 
@@ -64,7 +67,8 @@ def get_subtask_service(db: Session = Depends(get_db)) -> SubTaskService:
     """Создаёт сервис подзадач."""
     subtask_repository = SubTaskRepository(db)
     task_repository = TaskRepository(db)
-    return SubTaskService(subtask_repository, task_repository)
+    cache_service = CacheService(get_redis_client())
+    return SubTaskService(subtask_repository, task_repository, cache_service)
 
 
 auth_scheme = HTTPBearer()
