@@ -12,7 +12,8 @@ router = APIRouter(prefix="/tags", tags=["Tags"])
 
 @router.get("/user", response_model=List[TagRead])
 def get_user_tags(
+    include_deleted: bool = False,
     current_user: User = Depends(get_current_user),
     tag_service: TagService = Depends(get_tag_service),
 ):
-    return tag_service.get_user_tags(current_user.id)
+    return tag_service.get_user_tags(current_user.id, include_deleted=include_deleted)

@@ -5,6 +5,7 @@ from app.repositories.user_repository import UserRepository
 from app.repositories.tag_repository import TagRepository
 from app.schemas import TaskRead, TagInput
 from app.services.cache_service import CacheService
+from app.services.sync_event_service import SyncEventService
 from uuid import UUID
 from typing import Dict, Any
 
@@ -15,12 +16,14 @@ class TaskService:
         task_repository: TaskRepository,
         user_repository: UserRepository,
         tag_repository: TagRepository,
-        cache_service: CacheService
+        cache_service: CacheService,
+        sync_event_service: SyncEventService
     ):
         self.task_repository = task_repository
         self.user_repository = user_repository
         self.tag_repository = tag_repository
         self.cache_service = cache_service
+        self.sync_event_service = sync_event_service
 
     def _tasks_cache_key(self, user_id: UUID) -> str:
         return f"tasks:user:{user_id}"
@@ -43,12 +46,14 @@ class TaskService:
         if payload.get("id") is not None:
             existing = self.tag_repository.get_by_id(user_id, payload["id"])
             if existing:
-                return self.tag_repository.update(
+                updated = self.tag_repository.update(
                     existing,
                     payload["is_user_tag"],
                     payload["name"],
                     payload["color"],
                 )
+                self.sync_event_service.log_tag_event(user_id, updated.id, "update")
+                return updated
 
         existing = self.tag_repository.get_by_identity(
             user_id,
@@ -59,13 +64,15 @@ class TaskService:
         if existing:
             return existing
 
-        return self.tag_repository.create(
+        created = self.tag_repository.create(
             user_id,
             payload["is_user_tag"],
             payload["name"],
             payload["color"],
             payload.get("id"),
         )
+        self.sync_event_service.log_tag_event(user_id, created.id, "create")
+        return created
 
     def _sync_task_tags(self, task, user_id: UUID, tags: Optional[list[TagInput]]) -> bool:
         if tags is None:
@@ -103,9 +110,11 @@ class TaskService:
 
         if changed:
             self.tag_repository.commit()
+            self.sync_event_service.log_task_event(user_id, task.id, "update")
             for tag in removed:
                 if not self.tag_repository.is_tag_linked(user_id, tag.id):
                     self.tag_repository.delete(tag)
+                    self.sync_event_service.log_tag_event(user_id, tag.id, "delete")
 
         return changed
 
@@ -116,21 +125,24 @@ class TaskService:
         task = self.task_repository.create(title, description, user_id)
         tags_changed = self._sync_task_tags(task, user_id, tags)
         self.cache_service.delete(self._tasks_cache_key(user_id))
+        self.sync_event_service.log_task_event(user_id, task.id, "create")
         if tags_changed:
             self.tag_repository.db.refresh(task)
         return TaskRead.model_validate(task)
 
-    def get_tasks(self, user_id: UUID) -> List[TaskRead]:
+    def get_tasks(self, user_id: UUID, include_deleted: bool = False) -> List[TaskRead]:
         """Получает все задачи пользователя."""
         self.user_repository.ensure_user_exists(user_id)
         cache_key = self._tasks_cache_key(user_id)
-        cached = self.cache_service.get_json(cache_key)
-        if cached is not None:
-            return [TaskRead.model_validate(item) for item in cached]
+        if not include_deleted:
+            cached = self.cache_service.get_json(cache_key)
+            if cached is not None:
+                return [TaskRead.model_validate(item) for item in cached]
 
-        tasks = self.task_repository.get_by_user_id(user_id)
+        tasks = self.task_repository.get_by_user_id(user_id, include_deleted=include_deleted)
         payload = [TaskRead.model_validate(task).model_dump() for task in tasks]
-        self.cache_service.set_json(cache_key, payload)
+        if not include_deleted:
+            self.cache_service.set_json(cache_key, payload)
         return [TaskRead.model_validate(item) for item in payload]
 
     def update_task(self, task_id: int, user_id: UUID, title: Optional[str], description: Optional[str], is_completed: Optional[bool], tags: Optional[list[TagInput]]) -> TaskRead:
@@ -144,6 +156,7 @@ class TaskService:
         updated_task = self.task_repository.update(task, title, description, is_completed)
         tags_changed = self._sync_task_tags(updated_task, user_id, tags)
         self.cache_service.delete(self._tasks_cache_key(user_id))
+        self.sync_event_service.log_task_event(user_id, updated_task.id, "update")
         if tags_changed:
             self.tag_repository.db.refresh(updated_task)
         return TaskRead.model_validate(updated_task)
@@ -156,6 +169,7 @@ class TaskService:
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
         
-        self.task_repository.delete(task)
+        deleted_task = self.task_repository.delete(task)
         self.cache_service.delete(self._tasks_cache_key(user_id), f"subtasks:task:{task_id}")
-        return {"message": "Task deleted successfully"}
+        self.sync_event_service.log_task_event(user_id, deleted_task.id, "delete")
+        return TaskRead.model_validate(deleted_task)

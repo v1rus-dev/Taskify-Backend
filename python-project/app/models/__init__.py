@@ -6,3 +6,5 @@ from .tag import Tag
 from .task_tag import task_tags
 from .friend import FriendRequest
 from .user_friend import user_friends
+from .sync_event import SyncEvent
+from .sync_op import SyncOp

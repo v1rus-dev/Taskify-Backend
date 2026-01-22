@@ -11,12 +11,11 @@ class TagRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_by_id(self, user_id: UUID, tag_id: int) -> Optional[Tag]:
-        return (
-            self.db.query(Tag)
-            .filter(Tag.user_id == user_id, Tag.id == tag_id)
-            .first()
-        )
+    def get_by_id(self, user_id: UUID, tag_id: int, include_deleted: bool = False) -> Optional[Tag]:
+        query = self.db.query(Tag).filter(Tag.user_id == user_id, Tag.id == tag_id)
+        if not include_deleted:
+            query = query.filter(Tag.deleted_at.is_(None))
+        return query.first()
 
     def get_by_identity(self, user_id: UUID, is_user_tag: bool, name: str, color: str) -> Optional[Tag]:
         return (
@@ -26,24 +25,37 @@ class TagRepository:
                 Tag.is_user_tag == is_user_tag,
                 Tag.name == name,
                 Tag.color == color,
+                Tag.deleted_at.is_(None),
             )
             .first()
         )
 
-    def get_user_tags(self, user_id: UUID) -> List[Tag]:
-        return (
+    def get_user_tags(self, user_id: UUID, include_deleted: bool = False) -> List[Tag]:
+        query = (
             self.db.query(Tag)
-            .filter(Tag.user_id == user_id, Tag.is_user_tag.is_(True))
-            .order_by(Tag.name.asc())
-            .all()
+            .filter(
+                Tag.user_id == user_id,
+                Tag.is_user_tag.is_(True),
+            )
         )
+        if not include_deleted:
+            query = query.filter(Tag.deleted_at.is_(None))
+        return query.order_by(Tag.name.asc()).all()
 
     def _next_tag_id(self, user_id: UUID) -> int:
         stmt = select(func.coalesce(func.max(Tag.id), 0)).where(Tag.user_id == user_id)
         current = self.db.execute(stmt).scalar() or 0
         return int(current) + 1
 
-    def create(self, user_id: UUID, is_user_tag: bool, name: str, color: str, tag_id: Optional[int] = None) -> Tag:
+    def create(
+        self,
+        user_id: UUID,
+        is_user_tag: bool,
+        name: str,
+        color: str,
+        tag_id: Optional[int] = None,
+        client_id: Optional[UUID] = None,
+    ) -> Tag:
         resolved_id = tag_id if tag_id is not None else self._next_tag_id(user_id)
         tag = Tag(
             id=resolved_id,
@@ -51,6 +63,7 @@ class TagRepository:
             is_user_tag=is_user_tag,
             name=name,
             color=color,
+            client_id=client_id,
         )
         self.db.add(tag)
         self.db.commit()
@@ -65,9 +78,11 @@ class TagRepository:
         self.db.refresh(tag)
         return tag
 
-    def delete(self, tag: Tag) -> None:
-        self.db.delete(tag)
+    def delete(self, tag: Tag) -> Tag:
+        tag.deleted_at = func.now()
         self.db.commit()
+        self.db.refresh(tag)
+        return tag
 
     def is_tag_linked(self, user_id: UUID, tag_id: int) -> bool:
         stmt = (
@@ -83,3 +98,9 @@ class TagRepository:
 
     def commit(self) -> None:
         self.db.commit()
+
+    def get_by_client_id(self, user_id: UUID, client_id: UUID, include_deleted: bool = True) -> Optional[Tag]:
+        query = self.db.query(Tag).filter(Tag.user_id == user_id, Tag.client_id == client_id)
+        if not include_deleted:
+            query = query.filter(Tag.deleted_at.is_(None))
+        return query.first()

@@ -17,10 +17,11 @@ def create_task(
 
 @router.get("/", response_model=List[TaskRead])
 def get_tasks(
+    include_deleted: bool = False,
     current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(get_task_service)
 ):
-    return task_service.get_tasks(current_user.id)
+    return task_service.get_tasks(current_user.id, include_deleted=include_deleted)
 
 @router.patch("/{task_id}", response_model=TaskRead)
 def update_task(
@@ -38,7 +39,7 @@ def update_task(
         task.tags,
     )
 
-@router.delete("/{task_id}")
+@router.delete("/{task_id}", response_model=TaskRead)
 def delete_task(
     task_id: int,
     current_user: User = Depends(get_current_user),

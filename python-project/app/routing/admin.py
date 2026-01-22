@@ -362,6 +362,7 @@ def admin_panel() -> HTMLResponse:
         <div id="database-tab" class="tab-content">
             <div class="controls">
                 <button id="refreshTablesBtn">🔄 Обновить</button>
+                <button id="dropAllTablesBtn" class="danger">🧨 Удалить все таблицы</button>
                 <div class="meta" id="db-meta"></div>
             </div>
             <div id="tables-container" class="tables-list"></div>
@@ -400,6 +401,7 @@ def admin_panel() -> HTMLResponse:
             const clearBtn = document.getElementById('clearBtn');
             const filterBtn = document.getElementById('filterBtn');
             const refreshTablesBtn = document.getElementById('refreshTablesBtn');
+            const dropAllTablesBtn = document.getElementById('dropAllTablesBtn');
             const viewDataBtn = document.getElementById('viewDataBtn');
             const viewStructureBtn = document.getElementById('viewStructureBtn');
             
@@ -407,6 +409,7 @@ def admin_panel() -> HTMLResponse:
             if (clearBtn) clearBtn.addEventListener('click', clearLogs);
             if (filterBtn) filterBtn.addEventListener('click', toggleFilter);
             if (refreshTablesBtn) refreshTablesBtn.addEventListener('click', loadTables);
+            if (dropAllTablesBtn) dropAllTablesBtn.addEventListener('click', dropAllTables);
             if (viewDataBtn) viewDataBtn.addEventListener('click', function() {
                 if (currentTable) {
                     viewDataBtn.classList.remove('secondary');
@@ -773,6 +776,24 @@ def admin_panel() -> HTMLResponse:
                 alert('Ошибка при удалении таблицы: ' + error.message);
             }
         }
+
+        async function dropAllTables() {
+            if (!confirm('ВНИМАНИЕ! Это удалит ВСЕ таблицы и данные в базе. Продолжить?')) return;
+            if (!confirm('Это действие необратимо. Точно удалить все таблицы?')) return;
+            try {
+                const response = await fetch('/admin/db/tables', { method: 'DELETE' });
+                if (response.ok) {
+                    alert('Все таблицы удалены');
+                    document.getElementById('table-data-container').innerHTML = '';
+                    await loadTables();
+                } else {
+                    const error = await response.json();
+                    alert('Ошибка: ' + (error.detail || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Ошибка при удалении таблиц: ' + error.message);
+            }
+        }
         
         // Initialize
         if (logEl && metaEl) {
@@ -925,4 +946,24 @@ def delete_table(table_name: str, db: Session = Depends(get_db)) -> JSONResponse
         return JSONResponse(
             status_code=500,
             content={"detail": f"Error deleting table: {str(e)}"}
+        )
+
+
+@router.delete("/db/tables")
+def delete_all_tables(db: Session = Depends(get_db)) -> JSONResponse:
+    """Полностью удаляет все таблицы кроме защищённых."""
+    protected_tables = {"alembic_version"}
+    try:
+        tables = _get_table_names()
+        for table_name in tables:
+            if table_name in protected_tables:
+                continue
+            db.execute(text(f'DROP TABLE IF EXISTS "{table_name}" CASCADE'))
+        db.commit()
+        return JSONResponse(content={"message": "All tables deleted successfully"})
+    except Exception as e:
+        db.rollback()
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Error deleting tables: {str(e)}"}
         )

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, String, Text, Boolean, DateTime, ForeignKey, func
+from sqlalchemy import Column, BigInteger, String, Text, Boolean, DateTime, ForeignKey, func, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy import and_
 from .task_tag import task_tags
@@ -8,12 +8,16 @@ from .tag import Tag
 
 class Task(Base):
     __tablename__ = "tasks"
+    __table_args__ = (
+        UniqueConstraint("user_id", "client_id", name="uq_tasks_user_client_id"),
+    )
 
     id = Column(BigInteger, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     is_completed = Column(Boolean, default=False, nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    client_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     user = relationship("User", back_populates="tasks")
     subtasks = relationship("SubTask", back_populates="task", cascade="all, delete-orphan")
     tags = relationship(
@@ -28,3 +32,4 @@ class Task(Base):
     )
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now(), nullable=False)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)

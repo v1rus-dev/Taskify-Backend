@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from datetime import datetime
+from uuid import UUID
 
 
 class SubTaskCreate(BaseModel):
@@ -34,5 +35,7 @@ class SubTaskRead(BaseModel):
     text: str
     is_completed: bool
     task_id: int
+    client_id: Optional[UUID] = None
     created_at: datetime
     updated_at: datetime
+    deleted_at: Optional[datetime] = None

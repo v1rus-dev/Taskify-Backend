@@ -18,6 +18,8 @@ from app.repositories.task_repository import TaskRepository
 from app.repositories.subtask_repository import SubTaskRepository
 from app.repositories.tag_repository import TagRepository
 from app.repositories.friend_repository import FriendRepository
+from app.repositories.sync_event_repository import SyncEventRepository
+from app.repositories.sync_op_repository import SyncOpRepository
 from app.services.user_service import UserService
 from app.services.task_service import TaskService
 from app.services.auth_service import AuthService
@@ -25,6 +27,8 @@ from app.services.subtask_service import SubTaskService
 from app.services.tag_service import TagService
 from app.services.friend_service import FriendService
 from app.services.cache_service import CacheService
+from app.services.sync_event_service import SyncEventService
+from app.services.sync_push_service import SyncPushService
 from app.core.redis import get_redis_client
 from app.core.security import decode_access_token
 from uuid import UUID
@@ -61,7 +65,9 @@ def get_task_service(db: Session = Depends(get_db)) -> TaskService:
     user_repository = UserRepository(db)
     tag_repository = TagRepository(db)
     cache_service = CacheService(get_redis_client())
-    return TaskService(task_repository, user_repository, tag_repository, cache_service)
+    sync_event_repository = SyncEventRepository(db)
+    sync_event_service = SyncEventService(sync_event_repository)
+    return TaskService(task_repository, user_repository, tag_repository, cache_service, sync_event_service)
 
 
 
@@ -77,7 +83,9 @@ def get_subtask_service(db: Session = Depends(get_db)) -> SubTaskService:
     subtask_repository = SubTaskRepository(db)
     task_repository = TaskRepository(db)
     cache_service = CacheService(get_redis_client())
-    return SubTaskService(subtask_repository, task_repository, cache_service)
+    sync_event_repository = SyncEventRepository(db)
+    sync_event_service = SyncEventService(sync_event_repository)
+    return SubTaskService(subtask_repository, task_repository, cache_service, sync_event_service)
 
 def get_tag_service(db: Session = Depends(get_db)) -> TagService:
     """Создаёт сервис тегов."""
@@ -88,6 +96,30 @@ def get_friend_service(db: Session = Depends(get_db)) -> FriendService:
     """Создаёт сервис друзей."""
     friend_repository = FriendRepository(db)
     return FriendService(friend_repository)
+
+
+def get_sync_event_service(db: Session = Depends(get_db)) -> SyncEventService:
+    """Создаёт сервис синхронизации изменений."""
+    sync_event_repository = SyncEventRepository(db)
+    return SyncEventService(sync_event_repository)
+
+
+def get_sync_push_service(db: Session = Depends(get_db)) -> SyncPushService:
+    """Создаёт сервис синхронизации клиента."""
+    task_repository = TaskRepository(db)
+    subtask_repository = SubTaskRepository(db)
+    tag_repository = TagRepository(db)
+    user_repository = UserRepository(db)
+    sync_op_repository = SyncOpRepository(db)
+    sync_event_service = SyncEventService(SyncEventRepository(db))
+    return SyncPushService(
+        task_repository,
+        subtask_repository,
+        tag_repository,
+        user_repository,
+        sync_op_repository,
+        sync_event_service,
+    )
 
 
 auth_scheme = HTTPBearer()

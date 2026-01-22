@@ -24,6 +24,8 @@ class TaskRead(BaseModel):
     description: Optional[str] = None
     is_completed: bool
     user_id: UUID
+    client_id: Optional[UUID] = None
     created_at: datetime
     updated_at: datetime
+    deleted_at: Optional[datetime] = None
     tags: List[TagRead] = Field(default_factory=list)
