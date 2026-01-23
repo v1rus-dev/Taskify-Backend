@@ -32,7 +32,7 @@ class SyncPushService:
         self.sync_op_repository = sync_op_repository
         self.sync_event_service = sync_event_service
 
-    def process(self, user_id: UUID, device_id: Optional[UUID], ops: List[SyncOpInput]):
+    def process(self, user_id: UUID, device_id: Optional[str], ops: List[SyncOpInput]):
         self.user_repository.ensure_user_exists(user_id)
         id_map: Dict[str, List[SyncIdMap]] = {"task": [], "subtask": [], "tag": []}
         ack: List[UUID] = []

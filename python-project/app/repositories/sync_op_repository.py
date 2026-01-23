@@ -17,7 +17,7 @@ class SyncOpRepository:
             is not None
         )
 
-    def create(self, user_id: UUID, op_id: UUID, device_id: Optional[UUID]) -> SyncOp:
+    def create(self, user_id: UUID, op_id: UUID, device_id: Optional[str]) -> SyncOp:
         op = SyncOp(user_id=user_id, op_id=op_id, device_id=device_id)
         self.db.add(op)
         self.db.commit()

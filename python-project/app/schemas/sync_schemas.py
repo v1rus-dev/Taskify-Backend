@@ -42,7 +42,7 @@ class SyncOpInput(BaseModel):
 
 
 class SyncPushRequest(BaseModel):
-    device_id: Optional[UUID] = None
+    device_id: Optional[str] = None
     ops: List[SyncOpInput]
 
 
