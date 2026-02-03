@@ -806,16 +806,18 @@ def admin_panel() -> HTMLResponse:
     return HTMLResponse(content=body)
 
 
+def _api_log_file() -> str:
+    return os.getenv("API_LOG_FILE") or os.getenv("LOG_FILE", "python-project/app/logs/server.log")
+
+
 @router.get("/logs/raw", response_class=HTMLResponse)
 def raw_logs(tail: int = Query(20000, ge=0, le=200000)) -> HTMLResponse:
-    log_file = os.getenv("LOG_FILE", "python-project/app/logs/server.log")
-    return HTMLResponse(content=_read_log(log_file, tail=tail))
+    return HTMLResponse(content=_read_log(_api_log_file(), tail=tail))
 
 
 @router.post("/logs/clear")
 def clear_logs() -> JSONResponse:
-    """Очищает файл логов."""
-    log_file = os.getenv("LOG_FILE", "python-project/app/logs/server.log")
+    log_file = _api_log_file()
     try:
         if os.path.exists(log_file):
             with open(log_file, "w", encoding="utf-8") as handle:
