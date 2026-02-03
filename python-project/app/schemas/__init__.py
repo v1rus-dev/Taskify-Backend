@@ -4,3 +4,13 @@ from .friend_schemas import FriendRequestCreate, FriendRequestRead, FriendAction
 from .user_schemas import UserRead
 from .auth_schemas import AuthRequest, AuthResponse, PasswordLinkRequest, PasswordLoginRequest, RefreshTokenRequest, RefreshTokenResponse
 from .subtask_schemas import SubTaskCreate, SubTaskUpdate, SubTaskRead, SubTaskCreateList, SubTaskUpdateList
+from .sync_schemas import (
+    SyncEventRead,
+    SyncChangesRead,
+    SyncOpInput,
+    SyncOpData,
+    SyncPushRequest,
+    SyncPushResponse,
+    SyncIdMap,
+    SyncOpError,
+)

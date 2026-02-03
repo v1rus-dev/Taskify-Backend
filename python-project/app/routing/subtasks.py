@@ -28,10 +28,11 @@ def create_subtasks(
 @router.get("", response_model=List[SubTaskRead])
 def get_subtasks(
     task_id: int,
+    include_deleted: bool = False,
     current_user: User = Depends(get_current_user),
     subtask_service: SubTaskService = Depends(get_subtask_service)
 ):
-    return subtask_service.get_subtasks(task_id, current_user.id)
+    return subtask_service.get_subtasks(task_id, current_user.id, include_deleted=include_deleted)
 
 
 @router.patch("", response_model=List[SubTaskRead])

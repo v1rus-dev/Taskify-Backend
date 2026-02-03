@@ -1,5 +1,6 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.models.task import Task
 from uuid import UUID
 
@@ -8,28 +9,41 @@ class TaskRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, title: str, description: Optional[str], user_id: UUID) -> Task:
+    def create(self, title: str, description: Optional[str], user_id: UUID, client_id: Optional[UUID] = None) -> Task:
         """Создаёт новую задачу."""
         new_task = Task(
             title=title,
             description=description,
-            user_id=user_id
+            user_id=user_id,
+            client_id=client_id,
         )
         self.db.add(new_task)
         self.db.commit()
         self.db.refresh(new_task)
         return new_task
 
-    def get_by_user_id(self, user_id: UUID) -> List[Task]:
+    def get_by_user_id(self, user_id: UUID, include_deleted: bool = False) -> List[Task]:
         """Получает все задачи пользователя."""
-        return self.db.query(Task).filter(Task.user_id == user_id).all()
+        query = self.db.query(Task).filter(Task.user_id == user_id)
+        if not include_deleted:
+            query = query.filter(Task.deleted_at.is_(None))
+        return query.all()
 
-    def get_by_id_and_user_id(self, task_id: int, user_id: UUID) -> Optional[Task]:
+    def get_by_id_and_user_id(self, task_id: int, user_id: UUID, include_deleted: bool = False) -> Optional[Task]:
         """Получает задачу по ID и user_id."""
-        return self.db.query(Task).filter(
+        query = self.db.query(Task).filter(
             Task.id == task_id,
             Task.user_id == user_id
-        ).first()
+        )
+        if not include_deleted:
+            query = query.filter(Task.deleted_at.is_(None))
+        return query.first()
+
+    def get_by_client_id(self, user_id: UUID, client_id: UUID, include_deleted: bool = True) -> Optional[Task]:
+        query = self.db.query(Task).filter(Task.user_id == user_id, Task.client_id == client_id)
+        if not include_deleted:
+            query = query.filter(Task.deleted_at.is_(None))
+        return query.first()
 
     def update(self, task: Task, title: Optional[str], description: Optional[str], is_completed: Optional[bool]) -> Task:
         """Обновляет задачу."""
@@ -43,7 +57,9 @@ class TaskRepository:
         self.db.refresh(task)
         return task
 
-    def delete(self, task: Task) -> None:
-        """Удаляет задачу."""
-        self.db.delete(task)
+    def delete(self, task: Task) -> Task:
+        """Мягко удаляет задачу."""
+        task.deleted_at = func.now()
         self.db.commit()
+        self.db.refresh(task)
+        return task

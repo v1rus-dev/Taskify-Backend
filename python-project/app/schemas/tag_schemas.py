@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
+from datetime import datetime
+from uuid import UUID
 
 
 class TagBase(BaseModel):
@@ -16,3 +18,5 @@ class TagRead(TagBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    client_id: Optional[UUID] = None
+    deleted_at: Optional[datetime] = None
