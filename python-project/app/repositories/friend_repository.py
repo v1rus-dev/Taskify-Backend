@@ -4,7 +4,8 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError
-from fastapi import HTTPException, status
+from fastapi import status
+from app.errors import raise_http
 
 from app.models.user import User
 from app.models.friend import FriendRequest
@@ -37,7 +38,7 @@ class FriendRepository:
     def set_new_unique_friend_tag(self, user_id: UUID) -> str:
         user = self.get_user_by_id(user_id)
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise_http(status.HTTP_404_NOT_FOUND, "USER_NOT_FOUND", "User not found")
         for _ in range(50):
             candidate = self._generate_friend_tag()
             user.friend_tag = candidate
@@ -46,9 +47,10 @@ class FriendRepository:
                 return candidate
             except IntegrityError:
                 self.db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unable to generate unique friend tag"
+        raise_http(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "FRIEND_TAG_GENERATION_FAILED",
+            "Unable to generate unique friend tag",
         )
 
     def get_request(self, requester_id: UUID, addressee_id: UUID) -> Optional[FriendRequest]:
@@ -65,7 +67,6 @@ class FriendRepository:
         request = FriendRequest(
             requester_id=requester_id,
             addressee_id=addressee_id,
-            status="pending",
         )
         self.db.add(request)
         self.db.commit()
@@ -79,7 +80,7 @@ class FriendRepository:
     def list_incoming(self, user_id: UUID) -> List[FriendRequest]:
         return (
             self.db.query(FriendRequest)
-            .filter(FriendRequest.addressee_id == user_id, FriendRequest.status == "pending")
+            .filter(FriendRequest.addressee_id == user_id)
             .order_by(FriendRequest.created_at.desc())
             .all()
         )
@@ -87,7 +88,7 @@ class FriendRepository:
     def list_outgoing(self, user_id: UUID) -> List[FriendRequest]:
         return (
             self.db.query(FriendRequest)
-            .filter(FriendRequest.requester_id == user_id, FriendRequest.status == "pending")
+            .filter(FriendRequest.requester_id == user_id)
             .order_by(FriendRequest.created_at.desc())
             .all()
         )
@@ -100,6 +101,27 @@ class FriendRepository:
                 FriendRequest.addressee_id == addressee_id,
             )
             .first()
+        )
+
+    def get_request_by_id(self, request_id: UUID) -> Optional[FriendRequest]:
+        return self.db.query(FriendRequest).filter(FriendRequest.id == request_id).first()
+
+    def list_incoming_with_users(self, user_id: UUID) -> List[tuple[FriendRequest, User]]:
+        return (
+            self.db.query(FriendRequest, User)
+            .join(User, User.id == FriendRequest.requester_id)
+            .filter(FriendRequest.addressee_id == user_id)
+            .order_by(FriendRequest.created_at.desc())
+            .all()
+        )
+
+    def list_outgoing_with_users(self, user_id: UUID) -> List[tuple[FriendRequest, User]]:
+        return (
+            self.db.query(FriendRequest, User)
+            .join(User, User.id == FriendRequest.addressee_id)
+            .filter(FriendRequest.requester_id == user_id)
+            .order_by(FriendRequest.created_at.desc())
+            .all()
         )
 
     def list_friends(self, user_id: UUID) -> List[User]:

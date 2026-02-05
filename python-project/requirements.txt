@@ -9,3 +9,4 @@ PyJWT[crypto]
 passlib[bcrypt]
 alembic
 redis
+pytest

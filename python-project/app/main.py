@@ -37,29 +37,35 @@ configure_logging()
 logger = logging.getLogger("app")
 
 
-def _error_response(message: str, code: str, details=None) -> JSONResponse:
+def _error_response(message: str, code: str, details=None, status_code: int | None = None) -> JSONResponse:
     payload = {"error": {"message": message, "code": code}}
     if details is not None:
         payload["error"]["details"] = details
-    return JSONResponse(status_code=int(code), content=payload)
+    return JSONResponse(status_code=status_code or 500, content=payload)
 
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
-    message = exc.detail if isinstance(exc.detail, str) else "Request failed"
-    details = None if isinstance(exc.detail, str) else exc.detail
-    return _error_response(message, str(exc.status_code), details)
+    if isinstance(exc.detail, dict) and "code" in exc.detail and "message" in exc.detail:
+        message = exc.detail["message"]
+        code = exc.detail["code"]
+        details = exc.detail.get("details")
+    else:
+        message = exc.detail if isinstance(exc.detail, str) else "Request failed"
+        code = "HTTP_ERROR"
+        details = None if isinstance(exc.detail, str) else exc.detail
+    return _error_response(message, code, details, status_code=exc.status_code)
 
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
-    return _error_response("Validation error", "422", exc.errors())
+    return _error_response("Validation error", "VALIDATION_ERROR", exc.errors(), status_code=422)
 
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(_: Request, exc: Exception) -> JSONResponse:
     logger.exception("Unhandled error: %s", exc)
-    return _error_response("Internal server error", "500")
+    return _error_response("Internal server error", "INTERNAL_ERROR", status_code=500)
 
 
 @app.middleware("http")

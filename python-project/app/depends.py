@@ -31,6 +31,7 @@ from app.services.sync_event_service import SyncEventService
 from app.services.sync_push_service import SyncPushService
 from app.core.redis import get_redis_client
 from app.core.security import decode_access_token
+from app.errors import raise_http, error_detail
 from uuid import UUID
 
 
@@ -133,39 +134,47 @@ def get_current_user(
 ):
     """Аутентификация через JWT."""
     if not credentials or not credentials.credentials:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authorization header missing or invalid"
+        raise_http(
+            status.HTTP_401_UNAUTHORIZED,
+            "AUTH_HEADER_MISSING_OR_INVALID",
+            "Authorization header missing or invalid",
         )
     
     try:
         payload = decode_access_token(credentials.credentials)
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Token validation failed: {str(exc)}"
-        ) from exc
+        raise_http(
+            status.HTTP_401_UNAUTHORIZED,
+            "TOKEN_VALIDATION_FAILED",
+            "Token validation failed",
+            details={"reason": str(exc)},
+        )
 
     subject = payload.get("sub")
     if not subject:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token missing subject (sub) claim"
+        raise_http(
+            status.HTTP_401_UNAUTHORIZED,
+            "TOKEN_MISSING_SUB",
+            "Token missing subject (sub) claim",
         )
 
     try:
         user_id = UUID(subject)
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid user ID format in token: {str(exc)}"
-        ) from exc
+        raise_http(
+            status.HTTP_401_UNAUTHORIZED,
+            "INVALID_TOKEN_SUBJECT",
+            "Invalid user ID format in token",
+            details={"reason": str(exc)},
+        )
 
     user = user_repository.get_by_id(user_id)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"User not found: {user_id}"
+        raise_http(
+            status.HTTP_401_UNAUTHORIZED,
+            "USER_NOT_FOUND",
+            "User not found",
+            details={"userId": str(user_id)},
         )
     return user
 
@@ -175,19 +184,13 @@ def require_admin(
     basic_credentials: HTTPBasicCredentials = Depends(admin_basic_scheme),
 ) -> None:
     if os.getenv("ENABLE_ADMIN", "false").lower() != "true":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access is disabled"
-        )
+        raise_http(status.HTTP_403_FORBIDDEN, "ADMIN_ACCESS_DISABLED", "Admin access is disabled")
 
     admin_token = os.getenv("ADMIN_TOKEN")
     if admin_token and bearer_credentials and bearer_credentials.credentials:
         if bearer_credentials.credentials == admin_token:
             return
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid admin token"
-        )
+        raise_http(status.HTTP_403_FORBIDDEN, "INVALID_ADMIN_TOKEN", "Invalid admin token")
 
     basic_user = os.getenv("ADMIN_BASIC_USER")
     basic_password = os.getenv("ADMIN_BASIC_PASSWORD")
@@ -196,16 +199,13 @@ def require_admin(
         is_pass_match = secrets.compare_digest(basic_credentials.password, basic_password)
         if is_user_match and is_pass_match:
             return
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid admin credentials"
-        )
+        raise_http(status.HTTP_403_FORBIDDEN, "INVALID_ADMIN_CREDENTIALS", "Invalid admin credentials")
 
     headers = None
     if os.getenv("ADMIN_BASIC_USER") and os.getenv("ADMIN_BASIC_PASSWORD"):
         headers = {"WWW-Authenticate": "Basic"}
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Authorization header missing or invalid",
+        detail=error_detail("AUTH_HEADER_MISSING_OR_INVALID", "Authorization header missing or invalid"),
         headers=headers,
     )

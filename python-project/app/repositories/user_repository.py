@@ -1,6 +1,7 @@
 from typing import Optional
 import secrets
-from fastapi import HTTPException, status
+from fastapi import status
+from app.errors import raise_http
 from sqlalchemy.orm import Session
 from app.models.user import User
 from uuid import UUID
@@ -105,13 +106,14 @@ class UserRepository:
             )
             if not exists:
                 return candidate
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unable to generate unique friend tag"
+        raise_http(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "FRIEND_TAG_GENERATION_FAILED",
+            "Unable to generate unique friend tag",
         )
 
     def ensure_user_exists(self, user_id: UUID) -> None:
         """Проверяет существование пользователя. Выбрасывает HTTPException, если пользователь не найден."""
         user = self.get_by_id(user_id)
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise_http(404, "USER_NOT_FOUND", "User not found")

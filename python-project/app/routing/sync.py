@@ -6,12 +6,26 @@ from app.schemas import SyncChangesRead, SyncPushRequest, SyncPushResponse
 from app.models.user import User
 from app.services.sync_event_service import SyncEventService
 from app.services.sync_push_service import SyncPushService
+from app.routing.docs import error_response
 
 
 router = APIRouter(prefix="/sync", tags=["Sync"])
 
 
-@router.get("/changes", response_model=SyncChangesRead)
+@router.get(
+    "/changes",
+    response_model=SyncChangesRead,
+    summary="Get sync changes",
+    description="Returns server-side changes for the current user since cursor.",
+    responses={
+        401: error_response(
+            "AUTH_HEADER_MISSING_OR_INVALID",
+            "Authorization header missing or invalid",
+            "Missing or invalid auth. Possible codes: AUTH_HEADER_MISSING_OR_INVALID, TOKEN_VALIDATION_FAILED, TOKEN_MISSING_SUB, INVALID_TOKEN_SUBJECT, USER_NOT_FOUND.",
+        ),
+        422: error_response("VALIDATION_ERROR", "Validation error", "Invalid query parameters."),
+    },
+)
 def get_changes(
     cursor: int = Query(default=0, ge=0),
     limit: int = Query(default=200, ge=1, le=500),
@@ -30,7 +44,20 @@ def get_changes(
     return SyncChangesRead(next_cursor=next_cursor, changes=changes)
 
 
-@router.post("/push", response_model=SyncPushResponse)
+@router.post(
+    "/push",
+    response_model=SyncPushResponse,
+    summary="Push sync changes",
+    description="Applies client changes and returns conflicts and mappings.",
+    responses={
+        401: error_response(
+            "AUTH_HEADER_MISSING_OR_INVALID",
+            "Authorization header missing or invalid",
+            "Missing or invalid auth. Possible codes: AUTH_HEADER_MISSING_OR_INVALID, TOKEN_VALIDATION_FAILED, TOKEN_MISSING_SUB, INVALID_TOKEN_SUBJECT, USER_NOT_FOUND.",
+        ),
+        422: error_response("VALIDATION_ERROR", "Validation error", "Invalid request payload."),
+    },
+)
 def push_changes(
     payload: SyncPushRequest,
     current_user: User = Depends(get_current_user),

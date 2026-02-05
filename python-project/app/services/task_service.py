@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import HTTPException
+from app.errors import raise_http
 from app.repositories.task_repository import TaskRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.tag_repository import TagRepository
@@ -151,7 +151,7 @@ class TaskService:
         
         task = self.task_repository.get_by_id_and_user_id(task_id, user_id)
         if not task:
-            raise HTTPException(status_code=404, detail="Task not found")
+            raise_http(404, "TASK_NOT_FOUND", "Task not found")
         
         updated_task = self.task_repository.update(task, title, description, is_completed)
         tags_changed = self._sync_task_tags(updated_task, user_id, tags)
@@ -167,7 +167,7 @@ class TaskService:
         
         task = self.task_repository.get_by_id_and_user_id(task_id, user_id)
         if not task:
-            raise HTTPException(status_code=404, detail="Task not found")
+            raise_http(404, "TASK_NOT_FOUND", "Task not found")
         
         deleted_task = self.task_repository.delete(task)
         self.cache_service.delete(self._tasks_cache_key(user_id), f"subtasks:task:{task_id}")

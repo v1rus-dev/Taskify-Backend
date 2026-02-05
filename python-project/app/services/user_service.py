@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from app.errors import raise_http
 from app.repositories.user_repository import UserRepository
 from app.schemas import UserRead
 from uuid import UUID
@@ -12,7 +12,7 @@ class UserService:
         """Получает пользователя по ID."""
         user = self.repository.get_by_id(user_id)
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise_http(404, "USER_NOT_FOUND", "User not found")
         return UserRead(
             id=user.id,
             provider=user.provider,

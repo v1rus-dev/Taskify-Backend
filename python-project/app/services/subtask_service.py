@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import HTTPException
+from app.errors import raise_http
 from app.repositories.subtask_repository import SubTaskRepository
 from app.repositories.task_repository import TaskRepository
 from app.schemas import SubTaskRead, SubTaskCreate, SubTaskUpdate
@@ -29,7 +29,7 @@ class SubTaskService:
         # Проверяем, что задача существует и принадлежит пользователю
         task = self.task_repository.get_by_id_and_user_id(task_id, user_id)
         if not task:
-            raise HTTPException(status_code=404, detail="Task not found")
+            raise_http(404, "TASK_NOT_FOUND", "Task not found")
         
         created_subtasks = []
         for subtask_data in subtasks_data:
@@ -48,7 +48,7 @@ class SubTaskService:
         # Проверяем, что задача существует и принадлежит пользователю
         task = self.task_repository.get_by_id_and_user_id(task_id, user_id)
         if not task:
-            raise HTTPException(status_code=404, detail="Task not found")
+            raise_http(404, "TASK_NOT_FOUND", "Task not found")
         
         cache_key = self._subtasks_cache_key(task_id)
         if not include_deleted:
@@ -67,14 +67,14 @@ class SubTaskService:
         # Проверяем, что задача существует и принадлежит пользователю
         task = self.task_repository.get_by_id_and_user_id(task_id, user_id)
         if not task:
-            raise HTTPException(status_code=404, detail="Task not found")
+            raise_http(404, "TASK_NOT_FOUND", "Task not found")
         
         updated_subtasks = []
         for subtask_data in subtasks_data:
             subtask_id = subtask_data["id"]
             subtask = self.subtask_repository.get_by_id_and_task_id(subtask_id, task_id)
             if not subtask:
-                raise HTTPException(status_code=404, detail=f"SubTask {subtask_id} not found")
+                raise_http(404, "SUBTASK_NOT_FOUND", f"SubTask {subtask_id} not found")
             
             updated_subtask = self.subtask_repository.update(
                 subtask,
@@ -91,11 +91,11 @@ class SubTaskService:
         # Проверяем, что задача существует и принадлежит пользователю
         task = self.task_repository.get_by_id_and_user_id(task_id, user_id)
         if not task:
-            raise HTTPException(status_code=404, detail="Task not found")
+            raise_http(404, "TASK_NOT_FOUND", "Task not found")
         
         subtask = self.subtask_repository.get_by_id_and_task_id(subtask_id, task_id)
         if not subtask:
-            raise HTTPException(status_code=404, detail="SubTask not found")
+            raise_http(404, "SUBTASK_NOT_FOUND", "SubTask not found")
         
         deleted_subtask = self.subtask_repository.delete(subtask)
         self.sync_event_service.log_subtask_event(user_id, deleted_subtask.id, "delete")
