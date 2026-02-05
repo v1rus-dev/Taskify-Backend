@@ -35,6 +35,18 @@ def auth_firebase(
 
 
 @router.post(
+    "/test",
+    response_model=AuthResponse,
+    summary="Authenticate test user",
+    description="Authenticates or creates a hardcoded test user and returns access/refresh tokens.",
+)
+def auth_test_user(
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    return auth_service.authenticate_test_user()
+
+
+@router.post(
     "/password/link",
     response_model=AuthResponse,
     summary="Link password",
