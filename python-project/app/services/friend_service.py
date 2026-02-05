@@ -1,5 +1,6 @@
 from typing import List
 from uuid import UUID
+import hashlib
 from fastapi import HTTPException, status
 
 from app.repositories.friend_repository import FriendRepository
@@ -19,14 +20,11 @@ class FriendService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         self.friend_repository.set_friend_tag(user_id, friend_tag)
 
-    def update_friend_tag(self, user_id: UUID, friend_tag: str) -> None:
-        existing = self.friend_repository.get_user_by_tag(friend_tag)
-        if existing and existing.id != user_id:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User tag already in use")
+    def update_friend_tag(self, user_id: UUID) -> str:
         current = self.friend_repository.get_user_by_id(user_id)
         if not current:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-        self.friend_repository.set_friend_tag(user_id, friend_tag)
+        return self.friend_repository.set_new_unique_friend_tag(user_id)
 
     def send_request(self, requester_id: UUID, target_tag: str) -> FriendRequestRead:
         target = self.friend_repository.get_user_by_tag(target_tag)
@@ -101,7 +99,16 @@ class FriendService:
 
     def list_friends(self, user_id: UUID) -> List[FriendRead]:
         friends = self.friend_repository.list_friends(user_id)
-        return [FriendRead(id=user.id, friend_tag=user.friend_tag) for user in friends]
+        return [
+            FriendRead(
+                id=user.id,
+                friend_tag=user.friend_tag,
+                name=user.name,
+                avatar_url=user.avatar_url,
+                anonymous_number=self._anonymous_number(user.friend_tag),
+            )
+            for user in friends
+        ]
 
     def remove_friend(self, user_id: UUID, friend_id: UUID) -> None:
         if not self.friend_repository.are_friends(user_id, friend_id):
@@ -113,3 +120,9 @@ class FriendService:
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         return user.id
+
+    @staticmethod
+    def _anonymous_number(friend_tag: str) -> str:
+        digest = hashlib.sha256(friend_tag.encode("utf-8")).digest()
+        value = int.from_bytes(digest[:4], "big") % 10000
+        return f"{value:04d}"

@@ -1,7 +1,10 @@
 from typing import List, Optional
+import secrets
 from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
+from sqlalchemy.exc import IntegrityError
+from fastapi import HTTPException, status
 
 from app.models.user import User
 from app.models.friend import FriendRequest
@@ -11,6 +14,7 @@ from app.models.user_friend import user_friends
 class FriendRepository:
     def __init__(self, db: Session):
         self.db = db
+        self._friend_tag_alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
     def get_user_by_tag(self, friend_tag: str) -> Optional[User]:
         return self.db.query(User).filter(User.friend_tag == friend_tag).first()
@@ -24,6 +28,28 @@ class FriendRepository:
             return
         user.friend_tag = friend_tag
         self.db.commit()
+
+    def _generate_friend_tag(self) -> str:
+        part_a = "".join(secrets.choice(self._friend_tag_alphabet) for _ in range(4))
+        part_b = "".join(secrets.choice(self._friend_tag_alphabet) for _ in range(4))
+        return f"{part_a}-{part_b}"
+
+    def set_new_unique_friend_tag(self, user_id: UUID) -> str:
+        user = self.get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        for _ in range(50):
+            candidate = self._generate_friend_tag()
+            user.friend_tag = candidate
+            try:
+                self.db.commit()
+                return candidate
+            except IntegrityError:
+                self.db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to generate unique friend tag"
+        )
 
     def get_request(self, requester_id: UUID, addressee_id: UUID) -> Optional[FriendRequest]:
         return (

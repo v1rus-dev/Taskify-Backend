@@ -4,7 +4,7 @@ from uuid import UUID
 
 from app.depends import get_friend_service, get_current_user
 from app.services.friend_service import FriendService
-from app.schemas import FriendRequestCreate, FriendRequestRead, FriendAction, FriendRead, FriendTagUpdate
+from app.schemas import FriendRequestCreate, FriendRequestRead, FriendAction, FriendRead
 from app.models.user import User
 
 
@@ -13,12 +13,11 @@ router = APIRouter(prefix="/friends", tags=["Friends"])
 
 @router.put("/tag")
 def update_friend_tag(
-    payload: FriendTagUpdate,
     current_user: User = Depends(get_current_user),
     friend_service: FriendService = Depends(get_friend_service),
 ):
-    friend_service.update_friend_tag(current_user.id, payload.friend_tag.strip())
-    return {"message": "Friend tag updated"}
+    new_tag = friend_service.update_friend_tag(current_user.id)
+    return {"friend_tag": new_tag}
 
 
 @router.post("/requests", response_model=FriendRequestRead)

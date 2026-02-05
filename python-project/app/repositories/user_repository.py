@@ -36,11 +36,12 @@ class UserRepository:
         avatar_url: Optional[str]
     ) -> User:
         """Создаёт нового пользователя из OAuth провайдера."""
+        display_name = name.strip() if name else None
         new_user = User(
             provider=provider,
             provider_user_id=provider_user_id,
             email=email,
-            name=name,
+            name=display_name,
             avatar_url=avatar_url,
             friend_tag=self._generate_unique_friend_tag()
         )

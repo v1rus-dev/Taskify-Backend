@@ -22,6 +22,13 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
         email = claims.get("email")
+        raw_name = claims.get("name") or claims.get("displayName")
+        name = raw_name.strip() if raw_name else None
+        avatar_url = (
+            claims.get("picture")
+            or claims.get("avatar_url")
+            or claims.get("avatarUrl")
+        )
         sign_in_provider = claims.get("firebase", {}).get("sign_in_provider", provider)
 
         user = self.user_repository.get_by_provider(sign_in_provider, provider_user_id)
@@ -30,11 +37,11 @@ class AuthService:
                 provider=sign_in_provider,
                 provider_user_id=provider_user_id,
                 email=email,
-                name=None,
-                avatar_url=None
+                name=name,
+                avatar_url=avatar_url
             )
         else:
-            user = self.user_repository.update_profile(user, email, None, None)
+            user = self.user_repository.update_profile(user, email, name, avatar_url)
         user = self.user_repository.ensure_friend_tag(user)
 
         access_token = create_access_token(str(user.id))
