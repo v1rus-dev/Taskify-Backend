@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field
 from typing import List
 from uuid import UUID
 
@@ -12,23 +12,19 @@ class FriendRequestRead(BaseModel):
 
 
 class FriendRequestUser(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
     id: UUID
     name: str | None = None
-    image_url: str | None = Field(default=None, alias="imageUrl")
-    display_name: str = Field(..., alias="displayName")
+    image_url: str | None = None
+    display_name: str
 
 
 class FriendRequestListItem(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    request_id: UUID = Field(..., alias="requestId")
+    request_id: UUID
     user: FriendRequestUser
 
 
 class FriendAction(BaseModel):
-    request_id: UUID = Field(..., alias="requestId")
+    request_id: UUID
 
 
 class FriendRead(BaseModel):

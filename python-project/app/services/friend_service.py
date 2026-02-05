@@ -47,7 +47,7 @@ class FriendService:
                 410,
                 "AUTO_ACCEPTED",
                 "Auto-accepted friend request",
-                details={"userId": str(target.id)},
+                details={"user_id": str(target.id)},
             )
 
         request = self.friend_repository.create_request(requester_id, target.id)

@@ -51,7 +51,7 @@ def update_friend_tag(
             "Already friends",
             "Conflict. Possible codes: ALREADY_FRIENDS, REQUEST_ALREADY_EXISTS.",
         ),
-        410: error_response("AUTO_ACCEPTED", "Auto-accepted friend request", "Incoming request auto-accepted.", details={"userId": "00000000-0000-0000-0000-000000000000"}),
+        410: error_response("AUTO_ACCEPTED", "Auto-accepted friend request", "Incoming request auto-accepted.", details={"user_id": "00000000-0000-0000-0000-000000000000"}),
         422: error_response("VALIDATION_ERROR", "Validation error", "Invalid request payload."),
     },
 )
@@ -106,7 +106,7 @@ def list_outgoing_requests(
     "/requests/accept",
     response_model=FriendRead,
     summary="Accept friend request",
-    description="Accepts an incoming friend request by requestId.",
+    description="Accepts an incoming friend request by request_id.",
     responses={
         401: error_response(
             "AUTH_HEADER_MISSING_OR_INVALID",
@@ -128,7 +128,7 @@ def accept_request(
 @router.post(
     "/requests/decline",
     summary="Decline friend request",
-    description="Declines an incoming friend request by requestId.",
+    description="Declines an incoming friend request by request_id.",
     responses={
         401: error_response(
             "AUTH_HEADER_MISSING_OR_INVALID",
@@ -150,7 +150,7 @@ def decline_request(
 @router.post(
     "/requests/cancel",
     summary="Cancel outgoing request",
-    description="Cancels an outgoing friend request by requestId.",
+    description="Cancels an outgoing friend request by request_id.",
     responses={
         401: error_response(
             "AUTH_HEADER_MISSING_OR_INVALID",

@@ -174,7 +174,7 @@ def get_current_user(
             status.HTTP_401_UNAUTHORIZED,
             "USER_NOT_FOUND",
             "User not found",
-            details={"userId": str(user_id)},
+            details={"user_id": str(user_id)},
         )
     return user
 
