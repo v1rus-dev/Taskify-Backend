@@ -4,7 +4,7 @@ from uuid import UUID
 
 from app.depends import get_friend_service, get_current_user
 from app.services.friend_service import FriendService
-from app.schemas import FriendRequestCreate, FriendRequestListItem, FriendAction, FriendRead
+from app.schemas import FriendRequestCreate, FriendRequestListItem, FriendAction, FriendRead, FriendStatusRead
 from app.models.user import User
 from app.routing.docs import error_response
 
@@ -170,7 +170,7 @@ def cancel_request(
     return {"message": "Request canceled"}
 
 @router.delete(
-    "/{friend_id}",
+    "/{user_id}",
     summary="Remove friend",
     description="Removes a friend by user ID.",
     responses={
@@ -180,16 +180,39 @@ def cancel_request(
             "Missing or invalid auth. Possible codes: AUTH_HEADER_MISSING_OR_INVALID, TOKEN_VALIDATION_FAILED, TOKEN_MISSING_SUB, INVALID_TOKEN_SUBJECT, USER_NOT_FOUND.",
         ),
         404: error_response("FRIEND_NOT_FOUND", "Friend not found", "Friend not found."),
-        422: error_response("VALIDATION_ERROR", "Validation error", "Invalid friend ID."),
+        422: error_response("VALIDATION_ERROR", "Validation error", "Invalid user ID."),
     },
 )
 def remove_friend(
-    friend_id: UUID,
+    user_id: UUID,
     current_user: User = Depends(get_current_user),
     friend_service: FriendService = Depends(get_friend_service),
 ):
-    friend_service.remove_friend(current_user.id, friend_id)
+    friend_service.remove_friend(current_user.id, user_id)
     return {"message": "Friend removed"}
+
+
+@router.get(
+    "/{user_id}",
+    response_model=FriendStatusRead,
+    summary="Get friend user",
+    description="Returns whether the user is a friend and their FriendRead data.",
+    responses={
+        401: error_response(
+            "AUTH_HEADER_MISSING_OR_INVALID",
+            "Authorization header missing or invalid",
+            "Missing or invalid auth. Possible codes: AUTH_HEADER_MISSING_OR_INVALID, TOKEN_VALIDATION_FAILED, TOKEN_MISSING_SUB, INVALID_TOKEN_SUBJECT, USER_NOT_FOUND.",
+        ),
+        404: error_response("USER_NOT_FOUND", "User not found", "User not found."),
+        422: error_response("VALIDATION_ERROR", "Validation error", "Invalid user ID."),
+    },
+)
+def get_friend_user(
+    user_id: UUID,
+    current_user: User = Depends(get_current_user),
+    friend_service: FriendService = Depends(get_friend_service),
+):
+    return friend_service.get_friend_user(current_user.id, user_id)
 
 
 @router.get(

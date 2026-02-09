@@ -11,22 +11,6 @@ class FriendRequestRead(BaseModel):
     addressee_id: UUID
 
 
-class FriendRequestUser(BaseModel):
-    id: UUID
-    name: str | None = None
-    image_url: str | None = None
-    display_name: str
-
-
-class FriendRequestListItem(BaseModel):
-    request_id: UUID
-    user: FriendRequestUser
-
-
-class FriendAction(BaseModel):
-    request_id: UUID
-
-
 class FriendRead(BaseModel):
     id: UUID
     friend_tag: str
@@ -35,5 +19,19 @@ class FriendRead(BaseModel):
     anonymous_number: str | None = None
 
 
+class FriendRequestListItem(BaseModel):
+    request_id: UUID
+    user: FriendRead
+
+
+class FriendAction(BaseModel):
+    request_id: UUID
+
+
 class FriendsList(BaseModel):
     friends: List[FriendRead]
+
+
+class FriendStatusRead(BaseModel):
+    is_friend: bool
+    user: FriendRead

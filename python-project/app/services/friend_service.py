@@ -4,7 +4,7 @@ import hashlib
 from app.errors import raise_http
 
 from app.repositories.friend_repository import FriendRepository
-from app.schemas import FriendRequestListItem, FriendRequestUser, FriendRead
+from app.schemas import FriendRequestListItem, FriendRead, FriendStatusRead
 
 
 class FriendService:
@@ -27,7 +27,9 @@ class FriendService:
         return self.friend_repository.set_new_unique_friend_tag(user_id)
 
     def send_request(self, requester_id: UUID, target_tag: str) -> FriendRequestListItem:
+        print(f"Sending request to {target_tag}")
         target = self.friend_repository.get_user_by_tag(target_tag)
+        print(f"Target: {target}")
         if not target:
             raise_http(404, "USER_NOT_FOUND", "User not found")
         if target.id == requester_id:
@@ -123,17 +125,25 @@ class FriendService:
             raise_http(404, "FRIEND_NOT_FOUND", "Friend not found")
         self.friend_repository.remove_friend_pair(user_id, friend_id)
 
+    def get_friend_user(self, current_user_id: UUID, target_user_id: UUID) -> FriendStatusRead:
+        target = self.friend_repository.get_user_by_id(target_user_id)
+        if not target:
+            raise_http(404, "USER_NOT_FOUND", "User not found")
+        user_read = self._build_request_user(target)
+        is_friend = self.friend_repository.are_friends(current_user_id, target_user_id)
+        return FriendStatusRead(is_friend=is_friend, user=user_read)
+
     @staticmethod
     def _anonymous_number(friend_tag: str) -> str:
         digest = hashlib.sha256(friend_tag.encode("utf-8")).digest()
         value = int.from_bytes(digest[:4], "big") % 10000
         return f"{value:04d}"
 
-    def _build_request_user(self, user) -> FriendRequestUser:
-        display_name = user.name or f"Anonymous {self._anonymous_number(user.friend_tag)}"
-        return FriendRequestUser(
+    def _build_request_user(self, user) -> FriendRead:
+        return FriendRead(
             id=user.id,
+            friend_tag=user.friend_tag,
             name=user.name,
-            image_url=user.avatar_url,
-            display_name=display_name,
+            avatar_url=user.avatar_url,
+            anonymous_number=self._anonymous_number(user.friend_tag),
         )

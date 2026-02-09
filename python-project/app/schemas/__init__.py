@@ -4,10 +4,10 @@ from .friend_schemas import (
     FriendRequestCreate,
     FriendRequestRead,
     FriendRequestListItem,
-    FriendRequestUser,
     FriendAction,
     FriendRead,
     FriendsList,
+    FriendStatusRead,
 )
 from .user_schemas import UserRead
 from .error_schemas import ErrorInfo, ErrorResponse

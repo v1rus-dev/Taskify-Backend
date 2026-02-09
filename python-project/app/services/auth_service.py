@@ -20,6 +20,11 @@ class AuthService:
         self._test_user_email = "test.user@taskify.local"
         self._test_user_name = "Test User"
         self._test_user_avatar_url = None
+        self._test_user_1_provider = "test"
+        self._test_user_1_provider_id = "test-user-1"
+        self._test_user_1_email = "test.user.1@taskify.local"
+        self._test_user_1_name = "Test User 1"
+        self._test_user_1_avatar_url = None
 
     def authenticate_with_provider(self, provider: str, id_token: str) -> AuthResponse:
         claims = self._verify_id_token(id_token)
@@ -77,6 +82,36 @@ class AuthService:
                 self._test_user_email,
                 self._test_user_name,
                 self._test_user_avatar_url,
+            )
+        user = self.user_repository.ensure_friend_tag(user)
+
+        access_token = create_access_token(str(user.id))
+        refresh_token = create_refresh_token(str(user.id))
+        return AuthResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            user=UserRead.model_validate(user)
+        )
+
+    def authenticate_test_user_1(self) -> AuthResponse:
+        user = self.user_repository.get_by_provider(
+            self._test_user_1_provider,
+            self._test_user_1_provider_id,
+        )
+        if not user:
+            user = self.user_repository.create_oauth_user(
+                provider=self._test_user_1_provider,
+                provider_user_id=self._test_user_1_provider_id,
+                email=self._test_user_1_email,
+                name=self._test_user_1_name,
+                avatar_url=self._test_user_1_avatar_url,
+            )
+        else:
+            user = self.user_repository.update_profile(
+                user,
+                self._test_user_1_email,
+                self._test_user_1_name,
+                self._test_user_1_avatar_url,
             )
         user = self.user_repository.ensure_friend_tag(user)
 
