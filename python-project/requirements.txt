@@ -13,3 +13,5 @@ passlib[bcrypt]
 alembic
 redis
 pytest
+asyncpg
+httpx
