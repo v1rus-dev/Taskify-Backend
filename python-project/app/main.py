@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from app.core.config import INTERNAL_ALERTS_API_KEY
+from app.core.logging import extract_client_ip
 from app.core.logging import configure_logging, register_request_logging
 from app.database import engine
 from app.models import Base
@@ -41,8 +42,49 @@ def _error_response(
     return JSONResponse(status_code=status_code or 500, content=payload)
 
 
+def _request_alert_details(request: Request, status_code: int, code: str) -> dict[str, Any]:
+    details = {
+        "status_code": status_code,
+        "error_code": code,
+        "method": request.method,
+        "path": request.url.path,
+        "query": request.url.query,
+        "request_id": getattr(request.state, "request_id", None),
+        "actor_id": getattr(request.state, "actor_id", None),
+        "client_ip": extract_client_ip(request),
+    }
+    return {key: value for key, value in details.items() if value not in (None, "")}
+
+
+async def _notify_critical_error(
+    request: Request,
+    *,
+    title: str,
+    message: str,
+    code: str,
+    status_code: int,
+    tags: list[str],
+    extra_details: Any | None = None,
+) -> None:
+    details = _request_alert_details(request, status_code=status_code, code=code)
+    if extra_details is not None:
+        details["error_details"] = extra_details
+
+    result = await alerts_client.send_critical_alert(
+        CriticalAlert(
+            title=title,
+            message=message,
+            source="taskify-backend",
+            tags=tags,
+            details=details,
+        )
+    )
+    if result.get("status") == "error":
+        logger.error("Failed to send critical Telegram alert: %s", result)
+
+
 @app.exception_handler(HTTPException)
-async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     if isinstance(exc.detail, dict) and "code" in exc.detail and "message" in exc.detail:
         message = exc.detail["message"]
         code = exc.detail["code"]
@@ -51,6 +93,18 @@ async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse
         message = exc.detail if isinstance(exc.detail, str) else "Request failed"
         code = "HTTP_ERROR"
         details = None if isinstance(exc.detail, str) else exc.detail
+
+    if exc.status_code >= 500 and code != "ALERT_DELIVERY_FAILED":
+        await _notify_critical_error(
+            request,
+            title=f"HTTP {exc.status_code} error in API",
+            message=message,
+            code=code,
+            status_code=exc.status_code,
+            tags=["api", "http", "5xx"],
+            extra_details=details,
+        )
+
     return _error_response(message, code, details, status_code=exc.status_code)
 
 
@@ -60,8 +114,16 @@ async def validation_exception_handler(_: Request, exc: RequestValidationError) 
 
 
 @app.exception_handler(Exception)
-async def unhandled_exception_handler(_: Request, exc: Exception) -> JSONResponse:
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.exception("Unhandled error: %s", exc)
+    await _notify_critical_error(
+        request,
+        title="Unhandled exception in API",
+        message=f"{type(exc).__name__}: {exc}",
+        code="INTERNAL_ERROR",
+        status_code=500,
+        tags=["api", "exception", "critical"],
+    )
     return _error_response("Internal server error", "INTERNAL_ERROR", status_code=500)
 
 
