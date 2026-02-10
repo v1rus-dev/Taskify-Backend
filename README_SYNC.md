@@ -153,7 +153,7 @@ Notes:
 
 ## Entities & Operations
 
-Supported entities: `task`, `subtask`, `tag`
+Supported entities: `task`, `subtask`, `tag`, `space`, `space_member`, `space_invite`, `space_task`, `space_subtask`, `space_list`, `space_note`
 
 Supported ops: `create`, `update`, `delete`
 
@@ -169,7 +169,7 @@ Tasks, subtasks, tags use `deleted_at`.
 ## Known Limitations / Next Steps
 - Task↔tag relations are not pushed via `/sync/push` yet.
   Use existing task update APIs or extend push to include `tag_client_ids`.
-- No conflict resolution beyond last-write-wins (LWW).
+- LWW is server-side (`updated_at` on server write wins).
 - `compact=true` only collapses within the current page.
 
 ## DB Fields Reference (Sync)

@@ -20,6 +20,9 @@ from app.repositories.tag_repository import TagRepository
 from app.repositories.friend_repository import FriendRepository
 from app.repositories.sync_event_repository import SyncEventRepository
 from app.repositories.sync_op_repository import SyncOpRepository
+from app.repositories.space_repository import SpaceRepository
+from app.repositories.space_invite_repository import SpaceInviteRepository
+from app.repositories.space_content_repository import SpaceContentRepository
 from app.services.user_service import UserService
 from app.services.task_service import TaskService
 from app.services.auth_service import AuthService
@@ -29,6 +32,11 @@ from app.services.friend_service import FriendService
 from app.services.cache_service import CacheService
 from app.services.sync_event_service import SyncEventService
 from app.services.sync_push_service import SyncPushService
+from app.services.space_permission_service import SpacePermissionService
+from app.services.space_interactor import SpaceInteractor
+from app.services.space_list_interactor import SpaceListInteractor
+from app.services.space_task_interactor import SpaceTaskInteractor
+from app.services.space_note_interactor import SpaceNoteInteractor
 from app.core.redis import get_redis_client
 from app.core.security import decode_access_token
 from app.errors import raise_http, error_detail
@@ -113,6 +121,9 @@ def get_sync_push_service(db: Session = Depends(get_db)) -> SyncPushService:
     user_repository = UserRepository(db)
     sync_op_repository = SyncOpRepository(db)
     sync_event_service = SyncEventService(SyncEventRepository(db))
+    space_repository = SpaceRepository(db)
+    space_invite_repository = SpaceInviteRepository(db)
+    space_content_repository = SpaceContentRepository(db)
     return SyncPushService(
         task_repository,
         subtask_repository,
@@ -120,7 +131,59 @@ def get_sync_push_service(db: Session = Depends(get_db)) -> SyncPushService:
         user_repository,
         sync_op_repository,
         sync_event_service,
+        space_repository,
+        space_invite_repository,
+        space_content_repository,
     )
+
+
+def get_space_repository(db: Session = Depends(get_db)) -> SpaceRepository:
+    return SpaceRepository(db)
+
+
+def get_space_invite_repository(db: Session = Depends(get_db)) -> SpaceInviteRepository:
+    return SpaceInviteRepository(db)
+
+
+def get_space_content_repository(db: Session = Depends(get_db)) -> SpaceContentRepository:
+    return SpaceContentRepository(db)
+
+
+def get_space_permission_service(db: Session = Depends(get_db)) -> SpacePermissionService:
+    return SpacePermissionService(SpaceRepository(db))
+
+
+def get_space_interactor(db: Session = Depends(get_db)) -> SpaceInteractor:
+    space_repository = SpaceRepository(db)
+    friend_repository = FriendRepository(db)
+    invite_repository = SpaceInviteRepository(db)
+    permission = SpacePermissionService(space_repository)
+    sync_event_service = SyncEventService(SyncEventRepository(db))
+    return SpaceInteractor(space_repository, friend_repository, invite_repository, permission, sync_event_service)
+
+
+def get_space_list_interactor(db: Session = Depends(get_db)) -> SpaceListInteractor:
+    space_repository = SpaceRepository(db)
+    content_repository = SpaceContentRepository(db)
+    permission = SpacePermissionService(space_repository)
+    sync_event_service = SyncEventService(SyncEventRepository(db))
+    return SpaceListInteractor(content_repository, permission, sync_event_service)
+
+
+def get_space_task_interactor(db: Session = Depends(get_db)) -> SpaceTaskInteractor:
+    space_repository = SpaceRepository(db)
+    content_repository = SpaceContentRepository(db)
+    permission = SpacePermissionService(space_repository)
+    sync_event_service = SyncEventService(SyncEventRepository(db))
+    return SpaceTaskInteractor(content_repository, space_repository, permission, sync_event_service)
+
+
+def get_space_note_interactor(db: Session = Depends(get_db)) -> SpaceNoteInteractor:
+    space_repository = SpaceRepository(db)
+    content_repository = SpaceContentRepository(db)
+    permission = SpacePermissionService(space_repository)
+    sync_event_service = SyncEventService(SyncEventRepository(db))
+    return SpaceNoteInteractor(content_repository, permission, sync_event_service)
 
 
 auth_scheme = HTTPBearer()

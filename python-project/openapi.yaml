@@ -1,0 +1,846 @@
+openapi: 3.1.0
+info:
+  title: Taskify Spaces API (MVP)
+  version: 1.0.0
+servers:
+  - url: /
+paths:
+  /spaces:
+    post:
+      summary: Create space
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpaceCreate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaceRead'
+    get:
+      summary: List spaces
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpaceRead'
+  /spaces/{space_id}:
+    get:
+      summary: Get space
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaceRead'
+    delete:
+      summary: Delete space (owner)
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: No Content }
+  /spaces/{space_id}/leave:
+    post:
+      summary: Leave space
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+
+  /spaces/{space_id}/members:
+    get:
+      summary: List members
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpaceMemberRead'
+    post:
+      summary: Add member
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpaceMemberCreate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaceMemberRead'
+  /spaces/{space_id}/members/{user_id}:
+    patch:
+      summary: Update member role
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: user_id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpaceMemberUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaceMemberRead'
+    delete:
+      summary: Remove member
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: user_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: No Content }
+
+  /spaces/{space_id}/invites:
+    post:
+      summary: Create invite
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpaceInviteCreate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaceInviteRead'
+    get:
+      summary: List invites
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpaceInviteRead'
+  /spaces/invites/{token}/accept:
+    post:
+      summary: Accept invite
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaceInviteAcceptRead'
+  /spaces/{space_id}/invites/{invite_id}/revoke:
+    post:
+      summary: Revoke invite
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: invite_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaceInviteRead'
+
+  /spaces/{space_id}/lists:
+    post:
+      summary: Create list
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpaceListCreate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SpaceListRead' }
+    get:
+      summary: List lists
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SpaceListRead' }
+  /spaces/{space_id}/lists/{list_id}:
+    patch:
+      summary: Update list
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: list_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SpaceListUpdate' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SpaceListRead' }
+    delete:
+      summary: Delete list (hard)
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: list_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: No Content }
+  /spaces/{space_id}/lists/reorder:
+    post:
+      summary: Reorder lists
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SpaceListReorderPayload' }
+      responses:
+        '200':
+          description: OK
+
+  /spaces/{space_id}/tasks:
+    post:
+      summary: Create task
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SpaceTaskCreate' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SpaceTaskRead' }
+    get:
+      summary: List tasks
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SpaceTaskRead' }
+  /spaces/{space_id}/tasks/{task_id}:
+    get:
+      summary: Get task
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+    patch:
+      summary: Update task
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SpaceTaskUpdate' }
+      responses:
+        '200': { description: OK }
+    delete:
+      summary: Delete task
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+  /spaces/{space_id}/tasks/{task_id}/claim:
+    post:
+      summary: Claim task
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+  /spaces/{space_id}/tasks/{task_id}/unclaim:
+    post:
+      summary: Unclaim task
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+  /spaces/{space_id}/tasks/{task_id}/assign:
+    post:
+      summary: Assign task
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SpaceTaskAssignPayload' }
+      responses:
+        '200': { description: OK }
+  /spaces/{space_id}/tasks/{task_id}/complete:
+    post:
+      summary: Complete task
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SpaceTaskCompletePayload' }
+      responses:
+        '200': { description: OK }
+  /spaces/{space_id}/tasks/{task_id}/uncomplete:
+    post:
+      summary: Uncomplete task
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+  /spaces/{space_id}/tasks/{task_id}/subtasks:
+    post:
+      summary: Create subtask
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SpaceSubTaskCreate' }
+      responses:
+        '200': { description: OK }
+    get:
+      summary: List subtasks
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+  /spaces/{space_id}/tasks/{task_id}/subtasks/{subtask_id}:
+    patch:
+      summary: Update subtask
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: subtask_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SpaceSubTaskUpdate' }
+      responses:
+        '200': { description: OK }
+    delete:
+      summary: Delete subtask
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: task_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: subtask_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /spaces/{space_id}/notes:
+    post:
+      summary: Create note
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SpaceNoteCreate' }
+      responses:
+        '200': { description: OK }
+    get:
+      summary: List notes
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+  /spaces/{space_id}/notes/{note_id}:
+    get:
+      summary: Get note
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: note_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+    patch:
+      summary: Update note
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: note_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SpaceNoteUpdate' }
+      responses:
+        '200': { description: OK }
+    delete:
+      summary: Delete note
+      parameters:
+        - in: path
+          name: space_id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: note_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /shares/notes/{note_id}:
+    post:
+      summary: Quick share note
+      parameters:
+        - in: path
+          name: note_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ShareCreatePayload' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ShareCreatedRead' }
+  /shares/lists/{list_id}:
+    post:
+      summary: Quick share list
+      parameters:
+        - in: path
+          name: list_id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ShareCreatePayload' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ShareCreatedRead' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SpaceCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        description: { type: string, nullable: true }
+        is_lightweight: { type: boolean, default: false }
+    SpaceRead:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        is_lightweight: { type: boolean }
+        created_by: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    SpaceMemberCreate:
+      type: object
+      required: [user_id, role]
+      properties:
+        user_id: { type: string, format: uuid }
+        role: { type: string, enum: [admin, editor, viewer] }
+    SpaceMemberUpdate:
+      type: object
+      required: [role]
+      properties:
+        role: { type: string, enum: [admin, editor, viewer] }
+    SpaceMemberRead:
+      type: object
+      properties:
+        id: { type: integer }
+        space_id: { type: integer }
+        user_id: { type: string, format: uuid }
+        role: { type: string }
+        status: { type: string }
+        joined_at: { type: string, format: date-time }
+    SpaceInviteCreate:
+      type: object
+      required: [role, expires_at]
+      properties:
+        role: { type: string, enum: [admin, editor, viewer] }
+        expires_at: { type: string, format: date-time }
+    SpaceInviteRead:
+      type: object
+      properties:
+        id: { type: integer }
+        space_id: { type: integer }
+        inviter_id: { type: string, format: uuid }
+        role: { type: string }
+        token: { type: string }
+        expires_at: { type: string, format: date-time }
+        status: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    SpaceInviteAcceptRead:
+      type: object
+      properties:
+        space_id: { type: integer }
+        member: { $ref: '#/components/schemas/SpaceMemberRead' }
+    SpaceListCreate:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        order: { type: integer, default: 0 }
+    SpaceListUpdate:
+      type: object
+      properties:
+        title: { type: string }
+        order: { type: integer }
+    SpaceListRead:
+      type: object
+      properties:
+        id: { type: integer }
+        space_id: { type: integer }
+        title: { type: string }
+        order: { type: integer }
+        created_by: { type: string, format: uuid }
+        updated_by: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    SpaceListReorderPayload:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer }
+              order: { type: integer }
+    SpaceTaskCreate:
+      type: object
+      required: [title]
+      properties:
+        list_id: { type: integer, nullable: true }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        assignee_id: { type: string, format: uuid, nullable: true }
+    SpaceTaskUpdate:
+      type: object
+      properties:
+        list_id: { type: integer, nullable: true }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        assignee_id: { type: string, format: uuid, nullable: true }
+    SpaceTaskAssignPayload:
+      type: object
+      properties:
+        assignee_id: { type: string, format: uuid, nullable: true }
+    SpaceTaskCompletePayload:
+      type: object
+      required: [is_completed]
+      properties:
+        is_completed: { type: boolean }
+    SpaceTaskRead:
+      type: object
+      properties:
+        id: { type: integer }
+        space_id: { type: integer }
+        list_id: { type: integer, nullable: true }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        assignee_id: { type: string, format: uuid, nullable: true }
+        claimed_by_id: { type: string, format: uuid, nullable: true }
+        completed_at: { type: string, format: date-time, nullable: true }
+        deleted_at: { type: string, format: date-time, nullable: true }
+        created_by: { type: string, format: uuid }
+        updated_by: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    SpaceSubTaskCreate:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        is_completed: { type: boolean, default: false }
+    SpaceSubTaskUpdate:
+      type: object
+      properties:
+        title: { type: string }
+        is_completed: { type: boolean }
+    SpaceSubTaskRead:
+      type: object
+      properties:
+        id: { type: integer }
+        task_id: { type: integer }
+        title: { type: string }
+        is_completed: { type: boolean }
+    SpaceNoteCreate:
+      type: object
+      required: [title, body]
+      properties:
+        title: { type: string }
+        body: { type: string }
+    SpaceNoteUpdate:
+      type: object
+      properties:
+        title: { type: string }
+        body: { type: string }
+    SpaceNoteRead:
+      type: object
+      properties:
+        id: { type: integer }
+        space_id: { type: integer }
+        title: { type: string }
+        body: { type: string }
+        deleted_at: { type: string, format: date-time, nullable: true }
+        created_by: { type: string, format: uuid }
+        updated_by: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    ShareCreatePayload:
+      type: object
+      properties:
+        member_user_ids:
+          type: array
+          items: { type: string, format: uuid }
+        role:
+          type: string
+          enum: [admin, editor, viewer]
+          default: viewer
+    ShareCreatedRead:
+      type: object
+      properties:
+        space_id: { type: integer }
+        is_lightweight: { type: boolean }
+        shared_entity_type: { type: string }
+        shared_entity_id: { type: integer }
+security:
+  - bearerAuth: []

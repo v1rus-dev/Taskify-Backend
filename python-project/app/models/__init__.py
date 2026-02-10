@@ -8,3 +8,10 @@ from .friend import FriendRequest
 from .user_friend import user_friends
 from .sync_event import SyncEvent
 from .sync_op import SyncOp
+from .space import Space
+from .space_member import SpaceMember
+from .space_invite import SpaceInvite
+from .space_task_list import SpaceTaskList
+from .space_task import SpaceTask
+from .space_subtask import SpaceSubTask
+from .space_note import SpaceNote

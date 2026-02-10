@@ -21,6 +21,7 @@ class SyncChangesRead(BaseModel):
 
 
 class SyncOpData(BaseModel):
+    # legacy task/subtask/tag fields
     title: Optional[str] = None
     description: Optional[str] = None
     is_completed: Optional[bool] = None
@@ -30,6 +31,19 @@ class SyncOpData(BaseModel):
     name: Optional[str] = None
     color: Optional[str] = None
     is_user_tag: Optional[bool] = None
+    # spaces fields
+    space_id: Optional[int] = None
+    list_id: Optional[int] = None
+    assignee_id: Optional[UUID] = None
+    claimed_by_id: Optional[UUID] = None
+    completed_at: Optional[datetime] = None
+    role: Optional[str] = None
+    status: Optional[str] = None
+    expires_at: Optional[datetime] = None
+    token: Optional[str] = None
+    body: Optional[str] = None
+    user_id: Optional[UUID] = None
+    is_lightweight: Optional[bool] = None
 
 
 class SyncOpInput(BaseModel):
