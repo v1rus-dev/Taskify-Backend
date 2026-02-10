@@ -1,4 +1,9 @@
+import os
+
+import pytest
 from fastapi.testclient import TestClient
+
+os.environ.setdefault("AUTO_CREATE_TABLES", "false")
 
 from app.main import app
 

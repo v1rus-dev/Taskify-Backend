@@ -1,10 +1,13 @@
 fastapi
 uvicorn[standard]
 sqlalchemy
+sqladmin
 psycopg2-binary
 python-dotenv
 pydantic
 pydantic[email]
+python-multipart
+itsdangerous
 PyJWT[crypto]
 passlib[bcrypt]
 alembic
