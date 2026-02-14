@@ -248,13 +248,9 @@ class AuthService:
                 "Firebase configuration missing. Please set FIREBASE_PROJECT_ID environment variable in your .env file.",
             )
 
-        jwks_url = os.getenv(
-            "FIREBASE_JWKS_URL",
-            "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
-        )
-        issuer = os.getenv(
-            "FIREBASE_ISSUER",
-            f"https://securetoken.google.com/{project_id}"
-        )
+        default_jwks = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
+        default_issuer = f"https://securetoken.google.com/{project_id}"
+        jwks_url = (os.getenv("FIREBASE_JWKS_URL") or "").strip() or default_jwks
+        issuer = (os.getenv("FIREBASE_ISSUER") or "").strip() or default_issuer
 
         return jwks_url, issuer, project_id
